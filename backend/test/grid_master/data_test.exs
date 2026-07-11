@@ -96,7 +96,12 @@ defmodule GridMaster.DataTest do
 
     test "連線指向不存在的城市 → raise" do
       map = Data.map()
-      broken = %{map | "edges" => [%{"between" => ["seattle", "taipei"], "cost" => 1} | tl(map["edges"])]}
+
+      broken = %{
+        map
+        | "edges" => [%{"between" => ["seattle", "taipei"], "cost" => 1} | tl(map["edges"])]
+      }
+
       assert_raise ArgumentError, ~r/taipei/, fn -> Validator.validate!(:map, broken) end
     end
 

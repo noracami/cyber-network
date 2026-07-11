@@ -79,7 +79,7 @@ defmodule GridMaster.Data.Validator do
       check!(type in @plant_types, "#{number} 號卡類型非法：#{type}")
       check!(is_integer(fuel) and fuel >= 0, "#{number} 號卡燃料數非法")
       check!(is_integer(powers) and powers >= 1, "#{number} 號卡供電數非法")
-      check!((fuel == 0) == (type in @no_fuel_types), "#{number} 號卡燃料數與類型矛盾（#{type}／#{fuel}）")
+      check!(fuel == 0 == type in @no_fuel_types, "#{number} 號卡燃料數與類型矛盾（#{type}／#{fuel}）")
       check!(is_binary(name) and name != "", "#{number} 號卡缺卡名")
     end)
 
@@ -92,7 +92,7 @@ defmodule GridMaster.Data.Validator do
       check!(n in number_set, "牌庫設置引用不存在的卡號 #{n}")
     end)
 
-    check!(top_of_deck not in initial_market ++ initial_future, "置頂卡不能同時在初始市場")
+    check!(top_of_deck not in (initial_market ++ initial_future), "置頂卡不能同時在初始市場")
     check!(Map.fetch!(setup, "step3_at_bottom") == true, "setup.step3_at_bottom 應為 true")
     :ok
   end
@@ -102,7 +102,11 @@ defmodule GridMaster.Data.Validator do
     check!(is_integer(starting_credits) and starting_credits > 0, "starting_credits 非法")
 
     slot_costs = Map.fetch!(rules, "city_slot_costs")
-    check!(length(slot_costs) == 3 and Enum.all?(slot_costs, &is_integer/1), "city_slot_costs 應為 3 階整數")
+
+    check!(
+      length(slot_costs) == 3 and Enum.all?(slot_costs, &is_integer/1),
+      "city_slot_costs 應為 3 階整數"
+    )
 
     payout = Map.fetch!(rules, "payout")
     check!(length(payout) == 21, "payout 表應有 21 格（供電 0–20 城），實際 #{length(payout)}")
@@ -114,11 +118,17 @@ defmodule GridMaster.Data.Validator do
     Enum.each(market, fn {resource, cfg} ->
       total = Map.fetch!(cfg, "total")
       initial = Map.fetch!(cfg, "initial")
-      check!(is_integer(total) and is_integer(initial) and initial in 0..total,
-             "#{resource} 市場 initial/total 非法")
+
+      check!(
+        is_integer(total) and is_integer(initial) and initial in 0..total,
+        "#{resource} 市場 initial/total 非法"
+      )
     end)
 
-    check!(Map.fetch!(rules, "resupply_order") == @resources, "resupply_order 應為 #{inspect(@resources)}")
+    check!(
+      Map.fetch!(rules, "resupply_order") == @resources,
+      "resupply_order 應為 #{inspect(@resources)}"
+    )
 
     resupply = Map.fetch!(rules, "resupply")
     check!(Enum.sort(Map.keys(resupply)) == @player_counts, "resupply 應涵蓋 2–6 人")
@@ -126,8 +136,11 @@ defmodule GridMaster.Data.Validator do
     Enum.each(resupply, fn {players, steps} ->
       Enum.each(~w(step1 step2 step3), fn step ->
         row = Map.fetch!(steps, step)
-        check!(length(row) == 4 and Enum.all?(row, &(is_integer(&1) and &1 >= 0)),
-               "resupply #{players} 人 #{step} 格式非法")
+
+        check!(
+          length(row) == 4 and Enum.all?(row, &(is_integer(&1) and &1 >= 0)),
+          "resupply #{players} 人 #{step} 格式非法"
+        )
       end)
     end)
 
