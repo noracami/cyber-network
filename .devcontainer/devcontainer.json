@@ -1,0 +1,12 @@
+{
+  "name": "Grid Master: Cyber Network",
+  "dockerComposeFile": ["../docker-compose.yml"],
+  "service": "dev",
+  "workspaceFolder": "/workspace",
+  "shutdownAction": "stopCompose",
+  "customizations": {
+    "vscode": {
+      "extensions": ["jakebecker.elixir-ls", "Vue.volar"]
+    }
+  }
+}
