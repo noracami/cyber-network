@@ -40,6 +40,8 @@ const ERROR_TEXT = {
 
 export const useRoomStore = defineStore('room', {
   state: () => ({
+    /** ?demo 展示模式：所有對後端的操作被攔截（見 demo/demo.js） */
+    demoMode: false,
     connected: false,
     /** @type {string | null} */
     selfId: null,
@@ -143,6 +145,10 @@ export const useRoomStore = defineStore('room', {
     },
 
     async op(event, payload = {}) {
+      if (this.demoMode) {
+        this.flashError('展示模式：動作不會送出')
+        return
+      }
       try {
         await push(event, payload)
       } catch (err) {

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { push } from '../channels/socket'
+import { useRoomStore } from './room'
 
 /**
  * @typedef {Object} ChatMessage
@@ -42,6 +43,18 @@ export const useChatStore = defineStore('chat', {
     async send(text) {
       const trimmed = text.trim()
       if (!trimmed) return
+      const room = useRoomStore()
+      if (room.demoMode) {
+        this.add({
+          id: Date.now(),
+          kind: 'chat',
+          from: room.selfId,
+          name: room.nameOf(room.selfId || ''),
+          text: trimmed,
+          at: new Date().toISOString(),
+        })
+        return
+      }
       await push('chat_send', { text: trimmed })
     },
   },

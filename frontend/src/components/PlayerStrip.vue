@@ -2,8 +2,10 @@
 import { computed } from 'vue'
 import { RESOURCE_META, seatColor, TYPE_META } from '../game/text'
 import { useRoomStore } from '../stores/room'
+import { useUiStore } from '../stores/ui'
 
 const room = useRoomStore()
+const ui = useUiStore()
 
 const players = computed(() => {
   const game = room.game
@@ -31,9 +33,18 @@ const players = computed(() => {
         <span class="hint">💰{{ player.credits }}・🏙{{ player.cities.length }}</span>
       </div>
       <div class="pc-row hint">
-        <span v-for="plant in player.plants" :key="plant.number" class="mini-plant">
-          #{{ plant.number }}{{ TYPE_META[plant.type]?.icon }}
-        </span>
+        <button
+          v-for="plant in player.plants"
+          :key="plant.number"
+          class="mini-plant"
+          title="點擊查看設施詳情"
+          @click="ui.showPlant(plant.number)"
+        >
+          <template v-if="player.id === room.selfId">
+            #{{ plant.number }}{{ TYPE_META[plant.type]?.icon }}<template v-if="plant.fuel > 0">×{{ plant.fuel }}</template>⚡{{ plant.powers }}
+          </template>
+          <template v-else>#{{ plant.number }}{{ TYPE_META[plant.type]?.icon }}</template>
+        </button>
       </div>
       <div class="pc-row hint">
         <template v-for="(meta, resource) in RESOURCE_META" :key="resource">

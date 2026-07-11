@@ -2,16 +2,22 @@
 import { onMounted } from 'vue'
 import { connect, reconnect } from './channels/socket'
 import ChatPanel from './components/ChatPanel.vue'
+import DemoToolbar from './components/DemoToolbar.vue'
 import GameOverView from './components/GameOverView.vue'
 import GameView from './components/GameView.vue'
 import LobbyView from './components/LobbyView.vue'
+import PlantDetailModal from './components/PlantDetailModal.vue'
+import RulesModal from './components/RulesModal.vue'
+import { enterDemo, isDemo } from './demo/demo'
 import { useRoomStore } from './stores/room'
 import { useSettingsStore } from './stores/settings'
 import { useStaticStore } from './stores/staticData'
+import { useUiStore } from './stores/ui'
 
 const room = useRoomStore()
 const settings = useSettingsStore()
 const staticStore = useStaticStore()
+const ui = useUiStore()
 
 /** OAuth callback 用 URL hash 帶回登入 token（或錯誤標記） */
 function consumeAuthHash() {
@@ -25,7 +31,13 @@ function consumeAuthHash() {
   }
 }
 
+const demo = isDemo()
+
 onMounted(() => {
+  if (demo) {
+    enterDemo()
+    return
+  }
   consumeAuthHash()
   staticStore.load()
   connect()
@@ -50,6 +62,7 @@ function logoutDiscord() {
     <header class="topbar">
       <h1>⚡ Grid Master <span class="sub">CYBER NETWORK</span></h1>
       <div class="user-box">
+        <button class="btn ghost" @click="ui.openRules()">📖 規則</button>
         <span class="conn-dot" :class="room.connected ? 'on' : 'off'" :title="room.connected ? '已連線' : '連線中斷'"></span>
 
         <template v-if="settings.discordToken">
@@ -74,6 +87,8 @@ function logoutDiscord() {
       </div>
     </header>
 
+    <DemoToolbar v-if="demo" />
+
     <main class="layout">
       <section class="stage">
         <LobbyView v-if="room.status === 'lobby'" />
@@ -85,6 +100,9 @@ function logoutDiscord() {
       </section>
       <ChatPanel />
     </main>
+
+    <RulesModal />
+    <PlantDetailModal />
 
     <footer class="disclaimer">
       非商業粉絲致敬作品，遊戲機制致敬《Power Grid》（Friedemann Friese／2F-Spiele／Rio Grande

@@ -21,6 +21,9 @@ export function connect() {
   const room = useRoomStore()
   const chat = useChatStore()
 
+  // 展示模式不連線——真實 room_sync 會蓋掉假資料
+  if (room.demoMode) return
+
   socket = new Socket(wsUrl(), {
     params: {
       token: settings.token,

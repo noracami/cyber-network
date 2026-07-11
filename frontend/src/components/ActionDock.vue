@@ -5,10 +5,12 @@ import { cost as ladderCost } from '../game/ladder'
 import { RESOURCE_META } from '../game/text'
 import { useRoomStore } from '../stores/room'
 import { useStaticStore } from '../stores/staticData'
+import { useUiStore } from '../stores/ui'
 import PlantCard from './PlantCard.vue'
 
 const room = useRoomStore()
 const staticStore = useStaticStore()
+const ui = useUiStore()
 
 const RESOURCES = Object.keys(RESOURCE_META)
 
@@ -127,7 +129,7 @@ function submitPower() {
       </div>
 
       <div v-else-if="isNominator" class="dock-section dock-row">
-        <p class="hint">從右側市場點選卡牌提名，或——</p>
+        <p class="hint">從下方設施市場點選卡牌提名，或——</p>
         <button
           class="btn ghost"
           :disabled="game.round === 1"
@@ -199,6 +201,7 @@ function submitPower() {
             供電 {{ powered }} 節點 → 收入 ${{ income }}
             <template v-if="!feasible">（資源不足！）</template>
           </span>
+          <button class="btn ghost sm" @click="ui.openRules('power', powered)">收入表</button>
           <button class="btn primary" :disabled="!feasible" @click="submitPower">送出供電計畫</button>
         </div>
       </div>
