@@ -1,0 +1,1027 @@
+{
+  "id": "usa",
+  "name": "美利堅網域",
+  "regions": [
+    {
+      "id": "nw",
+      "name": "西北叢集",
+      "color": "#9b59b6"
+    },
+    {
+      "id": "sw",
+      "name": "西南叢集",
+      "color": "#1abc9c"
+    },
+    {
+      "id": "mw",
+      "name": "中西叢集",
+      "color": "#f1c40f"
+    },
+    {
+      "id": "sc",
+      "name": "中南叢集",
+      "color": "#e74c3c"
+    },
+    {
+      "id": "ne",
+      "name": "東北叢集",
+      "color": "#a0785a"
+    },
+    {
+      "id": "se",
+      "name": "東南叢集",
+      "color": "#2ecc71"
+    }
+  ],
+  "cities": [
+    {
+      "id": "seattle",
+      "name": "Seattle",
+      "region": "nw",
+      "pos": {
+        "x": 1,
+        "y": 0
+      }
+    },
+    {
+      "id": "portland",
+      "name": "Portland",
+      "region": "nw",
+      "pos": {
+        "x": 0,
+        "y": 10
+      }
+    },
+    {
+      "id": "boise",
+      "name": "Boise",
+      "region": "nw",
+      "pos": {
+        "x": 13,
+        "y": 18
+      }
+    },
+    {
+      "id": "billings",
+      "name": "Billings",
+      "region": "nw",
+      "pos": {
+        "x": 28,
+        "y": 8
+      }
+    },
+    {
+      "id": "cheyenne",
+      "name": "Cheyenne",
+      "region": "nw",
+      "pos": {
+        "x": 35,
+        "y": 30
+      }
+    },
+    {
+      "id": "denver",
+      "name": "Denver",
+      "region": "nw",
+      "pos": {
+        "x": 34,
+        "y": 36
+      }
+    },
+    {
+      "id": "omaha",
+      "name": "Omaha",
+      "region": "nw",
+      "pos": {
+        "x": 52,
+        "y": 29
+      }
+    },
+    {
+      "id": "san_francisco",
+      "name": "San Francisco",
+      "region": "sw",
+      "pos": {
+        "x": 1,
+        "y": 45
+      }
+    },
+    {
+      "id": "los_angeles",
+      "name": "Los Angeles",
+      "region": "sw",
+      "pos": {
+        "x": 9,
+        "y": 62
+      }
+    },
+    {
+      "id": "san_diego",
+      "name": "San Diego",
+      "region": "sw",
+      "pos": {
+        "x": 11,
+        "y": 68
+      }
+    },
+    {
+      "id": "las_vegas",
+      "name": "Las Vegas",
+      "region": "sw",
+      "pos": {
+        "x": 15,
+        "y": 52
+      }
+    },
+    {
+      "id": "phoenix",
+      "name": "Phoenix",
+      "region": "sw",
+      "pos": {
+        "x": 21,
+        "y": 65
+      }
+    },
+    {
+      "id": "salt_lake_city",
+      "name": "Salt Lake City",
+      "region": "sw",
+      "pos": {
+        "x": 21,
+        "y": 31
+      }
+    },
+    {
+      "id": "santa_fe",
+      "name": "Santa Fe",
+      "region": "sw",
+      "pos": {
+        "x": 32,
+        "y": 55
+      }
+    },
+    {
+      "id": "fargo",
+      "name": "Fargo",
+      "region": "mw",
+      "pos": {
+        "x": 50,
+        "y": 3
+      }
+    },
+    {
+      "id": "duluth",
+      "name": "Duluth",
+      "region": "mw",
+      "pos": {
+        "x": 59,
+        "y": 4
+      }
+    },
+    {
+      "id": "minneapolis",
+      "name": "Minneapolis",
+      "region": "mw",
+      "pos": {
+        "x": 57,
+        "y": 12
+      }
+    },
+    {
+      "id": "chicago",
+      "name": "Chicago",
+      "region": "mw",
+      "pos": {
+        "x": 68,
+        "y": 26
+      }
+    },
+    {
+      "id": "st_louis",
+      "name": "St. Louis",
+      "region": "mw",
+      "pos": {
+        "x": 63,
+        "y": 41
+      }
+    },
+    {
+      "id": "cincinnati",
+      "name": "Cincinnati",
+      "region": "mw",
+      "pos": {
+        "x": 74,
+        "y": 39
+      }
+    },
+    {
+      "id": "knoxville",
+      "name": "Knoxville",
+      "region": "mw",
+      "pos": {
+        "x": 75,
+        "y": 53
+      }
+    },
+    {
+      "id": "kansas_city",
+      "name": "Kansas City",
+      "region": "sc",
+      "pos": {
+        "x": 55,
+        "y": 39
+      }
+    },
+    {
+      "id": "oklahoma_city",
+      "name": "Oklahoma City",
+      "region": "sc",
+      "pos": {
+        "x": 49,
+        "y": 56
+      }
+    },
+    {
+      "id": "dallas",
+      "name": "Dallas",
+      "region": "sc",
+      "pos": {
+        "x": 50,
+        "y": 68
+      }
+    },
+    {
+      "id": "houston",
+      "name": "Houston",
+      "region": "sc",
+      "pos": {
+        "x": 53,
+        "y": 82
+      }
+    },
+    {
+      "id": "memphis",
+      "name": "Memphis",
+      "region": "sc",
+      "pos": {
+        "x": 63,
+        "y": 57
+      }
+    },
+    {
+      "id": "new_orleans",
+      "name": "New Orleans",
+      "region": "sc",
+      "pos": {
+        "x": 63,
+        "y": 81
+      }
+    },
+    {
+      "id": "birmingham",
+      "name": "Birmingham",
+      "region": "sc",
+      "pos": {
+        "x": 70,
+        "y": 65
+      }
+    },
+    {
+      "id": "detroit",
+      "name": "Detroit",
+      "region": "ne",
+      "pos": {
+        "x": 77,
+        "y": 24
+      }
+    },
+    {
+      "id": "buffalo",
+      "name": "Buffalo",
+      "region": "ne",
+      "pos": {
+        "x": 85,
+        "y": 22
+      }
+    },
+    {
+      "id": "pittsburgh",
+      "name": "Pittsburgh",
+      "region": "ne",
+      "pos": {
+        "x": 83,
+        "y": 33
+      }
+    },
+    {
+      "id": "boston",
+      "name": "Boston",
+      "region": "ne",
+      "pos": {
+        "x": 100,
+        "y": 24
+      }
+    },
+    {
+      "id": "new_york",
+      "name": "New York",
+      "region": "ne",
+      "pos": {
+        "x": 94,
+        "y": 32
+      }
+    },
+    {
+      "id": "philadelphia",
+      "name": "Philadelphia",
+      "region": "ne",
+      "pos": {
+        "x": 92,
+        "y": 35
+      }
+    },
+    {
+      "id": "washington_dc",
+      "name": "Washington D.C.",
+      "region": "ne",
+      "pos": {
+        "x": 89,
+        "y": 40
+      }
+    },
+    {
+      "id": "norfolk",
+      "name": "Norfolk",
+      "region": "se",
+      "pos": {
+        "x": 90,
+        "y": 49
+      }
+    },
+    {
+      "id": "raleigh",
+      "name": "Raleigh",
+      "region": "se",
+      "pos": {
+        "x": 86,
+        "y": 54
+      }
+    },
+    {
+      "id": "atlanta",
+      "name": "Atlanta",
+      "region": "se",
+      "pos": {
+        "x": 74,
+        "y": 64
+      }
+    },
+    {
+      "id": "savannah",
+      "name": "Savannah",
+      "region": "se",
+      "pos": {
+        "x": 81,
+        "y": 71
+      }
+    },
+    {
+      "id": "jacksonville",
+      "name": "Jacksonville",
+      "region": "se",
+      "pos": {
+        "x": 80,
+        "y": 79
+      }
+    },
+    {
+      "id": "tampa",
+      "name": "Tampa",
+      "region": "se",
+      "pos": {
+        "x": 78,
+        "y": 90
+      }
+    },
+    {
+      "id": "miami",
+      "name": "Miami",
+      "region": "se",
+      "pos": {
+        "x": 82,
+        "y": 100
+      }
+    }
+  ],
+  "edges": [
+    {
+      "between": [
+        "seattle",
+        "portland"
+      ],
+      "cost": 3
+    },
+    {
+      "between": [
+        "seattle",
+        "billings"
+      ],
+      "cost": 9
+    },
+    {
+      "between": [
+        "seattle",
+        "boise"
+      ],
+      "cost": 12
+    },
+    {
+      "between": [
+        "portland",
+        "boise"
+      ],
+      "cost": 13
+    },
+    {
+      "between": [
+        "portland",
+        "san_francisco"
+      ],
+      "cost": 24
+    },
+    {
+      "between": [
+        "boise",
+        "billings"
+      ],
+      "cost": 12
+    },
+    {
+      "between": [
+        "boise",
+        "cheyenne"
+      ],
+      "cost": 24
+    },
+    {
+      "between": [
+        "boise",
+        "san_francisco"
+      ],
+      "cost": 23
+    },
+    {
+      "between": [
+        "boise",
+        "salt_lake_city"
+      ],
+      "cost": 8
+    },
+    {
+      "between": [
+        "billings",
+        "cheyenne"
+      ],
+      "cost": 9
+    },
+    {
+      "between": [
+        "billings",
+        "fargo"
+      ],
+      "cost": 17
+    },
+    {
+      "between": [
+        "billings",
+        "minneapolis"
+      ],
+      "cost": 18
+    },
+    {
+      "between": [
+        "cheyenne",
+        "denver"
+      ],
+      "cost": 0
+    },
+    {
+      "between": [
+        "cheyenne",
+        "omaha"
+      ],
+      "cost": 14
+    },
+    {
+      "between": [
+        "cheyenne",
+        "minneapolis"
+      ],
+      "cost": 18
+    },
+    {
+      "between": [
+        "denver",
+        "salt_lake_city"
+      ],
+      "cost": 21
+    },
+    {
+      "between": [
+        "denver",
+        "santa_fe"
+      ],
+      "cost": 13
+    },
+    {
+      "between": [
+        "denver",
+        "kansas_city"
+      ],
+      "cost": 16
+    },
+    {
+      "between": [
+        "omaha",
+        "minneapolis"
+      ],
+      "cost": 8
+    },
+    {
+      "between": [
+        "omaha",
+        "chicago"
+      ],
+      "cost": 13
+    },
+    {
+      "between": [
+        "omaha",
+        "kansas_city"
+      ],
+      "cost": 5
+    },
+    {
+      "between": [
+        "san_francisco",
+        "salt_lake_city"
+      ],
+      "cost": 27
+    },
+    {
+      "between": [
+        "san_francisco",
+        "las_vegas"
+      ],
+      "cost": 14
+    },
+    {
+      "between": [
+        "san_francisco",
+        "los_angeles"
+      ],
+      "cost": 9
+    },
+    {
+      "between": [
+        "los_angeles",
+        "las_vegas"
+      ],
+      "cost": 9
+    },
+    {
+      "between": [
+        "los_angeles",
+        "san_diego"
+      ],
+      "cost": 3
+    },
+    {
+      "between": [
+        "san_diego",
+        "las_vegas"
+      ],
+      "cost": 9
+    },
+    {
+      "between": [
+        "san_diego",
+        "phoenix"
+      ],
+      "cost": 14
+    },
+    {
+      "between": [
+        "las_vegas",
+        "phoenix"
+      ],
+      "cost": 15
+    },
+    {
+      "between": [
+        "las_vegas",
+        "salt_lake_city"
+      ],
+      "cost": 18
+    },
+    {
+      "between": [
+        "las_vegas",
+        "santa_fe"
+      ],
+      "cost": 27
+    },
+    {
+      "between": [
+        "phoenix",
+        "santa_fe"
+      ],
+      "cost": 18
+    },
+    {
+      "between": [
+        "salt_lake_city",
+        "santa_fe"
+      ],
+      "cost": 28
+    },
+    {
+      "between": [
+        "fargo",
+        "duluth"
+      ],
+      "cost": 6
+    },
+    {
+      "between": [
+        "fargo",
+        "minneapolis"
+      ],
+      "cost": 6
+    },
+    {
+      "between": [
+        "duluth",
+        "minneapolis"
+      ],
+      "cost": 5
+    },
+    {
+      "between": [
+        "duluth",
+        "chicago"
+      ],
+      "cost": 12
+    },
+    {
+      "between": [
+        "duluth",
+        "detroit"
+      ],
+      "cost": 15
+    },
+    {
+      "between": [
+        "minneapolis",
+        "chicago"
+      ],
+      "cost": 8
+    },
+    {
+      "between": [
+        "chicago",
+        "st_louis"
+      ],
+      "cost": 10
+    },
+    {
+      "between": [
+        "chicago",
+        "cincinnati"
+      ],
+      "cost": 7
+    },
+    {
+      "between": [
+        "chicago",
+        "detroit"
+      ],
+      "cost": 7
+    },
+    {
+      "between": [
+        "chicago",
+        "kansas_city"
+      ],
+      "cost": 8
+    },
+    {
+      "between": [
+        "st_louis",
+        "cincinnati"
+      ],
+      "cost": 12
+    },
+    {
+      "between": [
+        "st_louis",
+        "kansas_city"
+      ],
+      "cost": 6
+    },
+    {
+      "between": [
+        "st_louis",
+        "memphis"
+      ],
+      "cost": 7
+    },
+    {
+      "between": [
+        "st_louis",
+        "atlanta"
+      ],
+      "cost": 12
+    },
+    {
+      "between": [
+        "cincinnati",
+        "knoxville"
+      ],
+      "cost": 6
+    },
+    {
+      "between": [
+        "cincinnati",
+        "detroit"
+      ],
+      "cost": 4
+    },
+    {
+      "between": [
+        "cincinnati",
+        "pittsburgh"
+      ],
+      "cost": 7
+    },
+    {
+      "between": [
+        "cincinnati",
+        "raleigh"
+      ],
+      "cost": 15
+    },
+    {
+      "between": [
+        "knoxville",
+        "atlanta"
+      ],
+      "cost": 5
+    },
+    {
+      "between": [
+        "santa_fe",
+        "kansas_city"
+      ],
+      "cost": 16
+    },
+    {
+      "between": [
+        "santa_fe",
+        "oklahoma_city"
+      ],
+      "cost": 15
+    },
+    {
+      "between": [
+        "santa_fe",
+        "dallas"
+      ],
+      "cost": 16
+    },
+    {
+      "between": [
+        "santa_fe",
+        "houston"
+      ],
+      "cost": 21
+    },
+    {
+      "between": [
+        "kansas_city",
+        "oklahoma_city"
+      ],
+      "cost": 8
+    },
+    {
+      "between": [
+        "kansas_city",
+        "memphis"
+      ],
+      "cost": 12
+    },
+    {
+      "between": [
+        "oklahoma_city",
+        "dallas"
+      ],
+      "cost": 3
+    },
+    {
+      "between": [
+        "oklahoma_city",
+        "memphis"
+      ],
+      "cost": 14
+    },
+    {
+      "between": [
+        "dallas",
+        "houston"
+      ],
+      "cost": 5
+    },
+    {
+      "between": [
+        "dallas",
+        "memphis"
+      ],
+      "cost": 12
+    },
+    {
+      "between": [
+        "dallas",
+        "new_orleans"
+      ],
+      "cost": 12
+    },
+    {
+      "between": [
+        "houston",
+        "new_orleans"
+      ],
+      "cost": 8
+    },
+    {
+      "between": [
+        "memphis",
+        "new_orleans"
+      ],
+      "cost": 7
+    },
+    {
+      "between": [
+        "memphis",
+        "birmingham"
+      ],
+      "cost": 6
+    },
+    {
+      "between": [
+        "new_orleans",
+        "birmingham"
+      ],
+      "cost": 11
+    },
+    {
+      "between": [
+        "new_orleans",
+        "jacksonville"
+      ],
+      "cost": 16
+    },
+    {
+      "between": [
+        "detroit",
+        "buffalo"
+      ],
+      "cost": 7
+    },
+    {
+      "between": [
+        "detroit",
+        "pittsburgh"
+      ],
+      "cost": 6
+    },
+    {
+      "between": [
+        "buffalo",
+        "pittsburgh"
+      ],
+      "cost": 7
+    },
+    {
+      "between": [
+        "buffalo",
+        "new_york"
+      ],
+      "cost": 8
+    },
+    {
+      "between": [
+        "pittsburgh",
+        "washington_dc"
+      ],
+      "cost": 6
+    },
+    {
+      "between": [
+        "pittsburgh",
+        "raleigh"
+      ],
+      "cost": 7
+    },
+    {
+      "between": [
+        "boston",
+        "new_york"
+      ],
+      "cost": 3
+    },
+    {
+      "between": [
+        "new_york",
+        "philadelphia"
+      ],
+      "cost": 0
+    },
+    {
+      "between": [
+        "philadelphia",
+        "washington_dc"
+      ],
+      "cost": 3
+    },
+    {
+      "between": [
+        "washington_dc",
+        "norfolk"
+      ],
+      "cost": 5
+    },
+    {
+      "between": [
+        "norfolk",
+        "raleigh"
+      ],
+      "cost": 3
+    },
+    {
+      "between": [
+        "raleigh",
+        "atlanta"
+      ],
+      "cost": 7
+    },
+    {
+      "between": [
+        "raleigh",
+        "savannah"
+      ],
+      "cost": 7
+    },
+    {
+      "between": [
+        "atlanta",
+        "savannah"
+      ],
+      "cost": 7
+    },
+    {
+      "between": [
+        "birmingham",
+        "atlanta"
+      ],
+      "cost": 3
+    },
+    {
+      "between": [
+        "birmingham",
+        "jacksonville"
+      ],
+      "cost": 9
+    },
+    {
+      "between": [
+        "savannah",
+        "jacksonville"
+      ],
+      "cost": 0
+    },
+    {
+      "between": [
+        "jacksonville",
+        "tampa"
+      ],
+      "cost": 4
+    },
+    {
+      "between": [
+        "tampa",
+        "miami"
+      ],
+      "cost": 4
+    }
+  ]
+}

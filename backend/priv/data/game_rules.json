@@ -1,0 +1,26 @@
+{
+  "starting_credits": 50,
+  "city_slot_costs": [10, 15, 20],
+  "resource_market": {
+    "hydro": { "total": 24, "initial": 24, "slots": "1-8x3" },
+    "thermal": { "total": 24, "initial": 18, "slots": "1-8x3" },
+    "waste": { "total": 24, "initial": 6, "slots": "1-8x3" },
+    "quantum": { "total": 12, "initial": 2, "slots": [1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 14, 16] }
+  },
+  "resupply": {
+    "2": { "step1": [3, 2, 1, 1], "step2": [4, 2, 2, 1], "step3": [3, 4, 3, 1] },
+    "3": { "step1": [4, 2, 1, 1], "step2": [5, 3, 2, 1], "step3": [3, 4, 3, 1] },
+    "4": { "step1": [5, 3, 2, 1], "step2": [6, 4, 3, 2], "step3": [4, 5, 4, 2] },
+    "5": { "step1": [5, 4, 3, 2], "step2": [7, 5, 3, 3], "step3": [5, 6, 5, 2] },
+    "6": { "step1": [7, 5, 3, 2], "step2": [9, 6, 5, 3], "step3": [6, 7, 6, 3] }
+  },
+  "resupply_order": ["hydro", "thermal", "waste", "quantum"],
+  "payout": [10, 22, 33, 44, 54, 64, 73, 82, 90, 98, 105, 112, 118, 124, 129, 134, 138, 142, 145, 148, 150],
+  "player_counts": {
+    "2": { "regions": 3, "removed_plants": 8, "max_plants": 4, "step2_trigger": 10, "game_end": 21 },
+    "3": { "regions": 3, "removed_plants": 8, "max_plants": 3, "step2_trigger": 7, "game_end": 17 },
+    "4": { "regions": 4, "removed_plants": 4, "max_plants": 3, "step2_trigger": 7, "game_end": 17 },
+    "5": { "regions": 5, "removed_plants": 0, "max_plants": 3, "step2_trigger": 7, "game_end": 15 },
+    "6": { "regions": 5, "removed_plants": 0, "max_plants": 3, "step2_trigger": 6, "game_end": 14 }
+  }
+}
