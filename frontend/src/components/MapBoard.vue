@@ -65,6 +65,10 @@ async function confirmBuild() {
   pendingBuild.value = null
 }
 
+function resetMapView() {
+  board?.resetView()
+}
+
 onMounted(async () => {
   board = new MapBoard()
   await board.init(host.value)
@@ -80,6 +84,8 @@ watch(() => staticStore.loaded, redraw)
 <template>
   <div class="map-wrap panel">
     <div ref="host" class="map-canvas"></div>
+
+    <button class="map-reset btn ghost sm" title="回到全圖" @click="resetMapView">⤢ 全圖</button>
 
     <div
       v-if="hover"

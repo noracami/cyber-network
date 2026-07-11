@@ -128,7 +128,7 @@ a.btn {
   display: flex;
   gap: 16px;
   padding: 16px 20px;
-  max-width: 1280px;
+  max-width: 1760px;
   width: 100%;
   margin: 0 auto;
 }
@@ -456,23 +456,17 @@ a.btn {
   gap: 12px;
 }
 
-.game-main {
+/* 地圖獨占一列，市場／資源／日誌在下方排一排（窄了自動換行） */
+.panel-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   align-items: stretch;
 }
 
-.map-area {
-  flex: 1;
+.panel-row > * {
+  flex: 1 1 320px;
   min-width: 0;
-}
-
-.side-col {
-  width: 340px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
 }
 
 .phase-banner {
@@ -523,7 +517,8 @@ a.btn {
 
 .map-canvas {
   width: 100%;
-  height: 520px;
+  /* 吃滿可用高度：視窗高扣掉頂欄／階段列／玩家列／操作欄的概略總和 */
+  height: clamp(480px, calc(100vh - 400px), 920px);
 }
 
 .map-tooltip {
@@ -553,6 +548,14 @@ a.btn {
 
 .map-confirm p {
   margin: 0 0 8px;
+}
+
+.map-reset {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
+  background: rgba(18, 22, 39, 0.8);
 }
 
 /* 卡牌 */
@@ -689,6 +692,22 @@ a.btn {
   font-size: 0.75rem;
 }
 
+button.mini-plant {
+  font: inherit;
+  font-size: 0.75rem;
+  padding: 1px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  cursor: pointer;
+}
+
+button.mini-plant:hover {
+  border-color: var(--cyan);
+  color: var(--text-bright);
+}
+
 /* 操作面板 */
 
 .action-dock {
@@ -770,6 +789,264 @@ a.btn {
   line-height: 1.4;
 }
 
+/* ── 展示模式工具列（?demo） ──────────── */
+
+.demo-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 6px 20px;
+  background: rgba(157, 107, 255, 0.08);
+  border-bottom: 1px solid var(--purple);
+  font-size: 0.85rem;
+}
+
+.demo-bar .tab {
+  flex: none;
+  padding: 6px 10px;
+}
+
+.demo-tag {
+  color: var(--purple);
+  font-weight: 700;
+}
+
+/* ── 資源市場面板（M8） ───────────────── */
+
+.rm-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.rm-icon {
+  width: 1.5em;
+  flex-shrink: 0;
+}
+
+.rm-ladder {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+
+.rm-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.rm-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  justify-content: flex-end;
+}
+
+.rm-slot {
+  width: 8px;
+  height: 6px;
+  border-radius: 2px;
+  border: 1px solid var(--border);
+  background: transparent;
+}
+
+.rm-slot.filled {
+  background: var(--cyan);
+  border-color: var(--cyan);
+  box-shadow: 0 0 4px var(--cyan-dim);
+}
+
+.rm-price {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: var(--text-dim);
+}
+
+.rm-next {
+  flex-shrink: 0;
+  min-width: 4.5em;
+  text-align: right;
+  font-family: var(--mono);
+}
+
+/* ── 彈窗（M8：規則說明／設施詳情） ────── */
+
+.modal-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 7, 14, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 20px;
+}
+
+.modal-box {
+  background: var(--bg-panel);
+  border: 1px solid var(--cyan);
+  border-radius: 12px;
+  box-shadow: 0 0 32px rgba(55, 230, 212, 0.12);
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-close {
+  font: inherit;
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.modal-close:hover {
+  color: var(--text-bright);
+}
+
+/* 規則說明 */
+
+.rules-modal {
+  width: 640px;
+  max-width: 100%;
+}
+
+.rules-head {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px 0;
+}
+
+.rules-head h3 {
+  margin: 0;
+}
+
+.rules-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin-top: 10px;
+  overflow-x: auto;
+}
+
+.rules-body {
+  padding: 14px 18px;
+  overflow-y: auto;
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+.rules-body h4 {
+  color: var(--text-bright);
+  margin: 1.2em 0 0.5em;
+  font-size: 0.95rem;
+}
+
+.rules-body ul,
+.rules-body ol {
+  margin: 0.4em 0;
+  padding-left: 1.4em;
+}
+
+.rules-body li {
+  margin: 0.35em 0;
+}
+
+.rules-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+.rules-table th,
+.rules-table td {
+  text-align: left;
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.rules-table th {
+  color: var(--text-dim);
+  font-weight: 500;
+  font-size: 0.78rem;
+}
+
+.rules-table tr.hl td {
+  color: var(--cyan);
+  background: var(--cyan-dim);
+}
+
+.payout-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 6px;
+}
+
+.payout-cell {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  text-align: center;
+  padding: 4px 2px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.payout-cell.hl {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  background: var(--cyan-dim);
+}
+
+/* 設施詳情 */
+
+.plant-detail {
+  width: 340px;
+  max-width: 100%;
+  padding: 14px 18px;
+}
+
+.pd-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.pd-number {
+  font-family: var(--mono);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-bright);
+}
+
+.pd-name {
+  color: var(--text-bright);
+  font-weight: 600;
+}
+
+.pd-stats {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 14px;
+  margin: 12px 0 0;
+}
+
+.pd-stats dt {
+  color: var(--text-dim);
+  font-size: 0.82rem;
+}
+
+.pd-stats dd {
+  margin: 0;
+  color: var(--text-bright);
+}
+
 /* ── 窄螢幕 ───────────────────────────── */
 
 @media (max-width: 860px) {
@@ -780,14 +1057,6 @@ a.btn {
   .chat {
     width: 100%;
     max-height: 320px;
-  }
-
-  .game-main {
-    flex-direction: column;
-  }
-
-  .side-col {
-    width: 100%;
   }
 
   .map-canvas {
