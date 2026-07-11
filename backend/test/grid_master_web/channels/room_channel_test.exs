@@ -12,6 +12,15 @@ defmodule GridMasterWeb.RoomChannelTest do
     socket
   end
 
+  # 入座需登入：模擬 Discord 身份連線
+  defp connect_discord(discord_id, name) do
+    token =
+      Phoenix.Token.sign(@endpoint, "discord_auth", %{id: discord_id, name: name, avatar: nil})
+
+    {:ok, socket} = connect(UserSocket, %{"discord_token" => token})
+    socket
+  end
+
   defp join_room(socket, room_id) do
     {:ok, snapshot, socket} = subscribe_and_join(socket, "room:" <> room_id)
     {snapshot, socket}
@@ -43,8 +52,8 @@ defmodule GridMasterWeb.RoomChannelTest do
     assert snapshot.self == socket.assigns.user.id
   end
 
-  test "入座 → 廣播 room_sync；聊天 → 廣播 chat_new" do
-    socket = connect_user("guest-token-0002", "小明")
+  test "Discord 使用者入座 → 廣播 room_sync；聊天 → 廣播 chat_new" do
+    socket = connect_discord("10001", "小明")
     {_snapshot, socket} = join_room(socket, new_room_id())
 
     ref = push(socket, "seat_take", %{})
@@ -54,6 +63,17 @@ defmodule GridMasterWeb.RoomChannelTest do
     ref = push(socket, "chat_send", %{"text" => "大家好"})
     assert_reply ref, :ok
     assert_broadcast "chat_new", %{kind: "chat", text: "大家好", name: "小明"}
+  end
+
+  test "訪客入座被拒（login_required），聊天不受影響" do
+    socket = connect_user("guest-token-0002", "小明")
+    {_snapshot, socket} = join_room(socket, new_room_id())
+
+    ref = push(socket, "seat_take", %{})
+    assert_reply ref, :error, %{reason: "login_required"}
+
+    ref = push(socket, "chat_send", %{"text" => "旁觀發言"})
+    assert_reply ref, :ok
   end
 
   test "名字過長被截斷、空名得到預設值" do
@@ -77,8 +97,8 @@ defmodule GridMasterWeb.RoomChannelTest do
 
   test "完整開局：兩位玩家經 channel 入座開打並下第一手" do
     room_id = new_room_id()
-    socket_a = connect_user("player-a-token-1", "玩家A")
-    socket_b = connect_user("player-b-token-1", "玩家B")
+    socket_a = connect_discord("20001", "玩家A")
+    socket_b = connect_discord("20002", "玩家B")
     {_snapshot, socket_a} = join_room(socket_a, room_id)
     {_snapshot, socket_b} = join_room(socket_b, room_id)
 

@@ -104,6 +104,23 @@ code {
   box-shadow: 0 0 8px var(--red);
 }
 
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+}
+
+.self-name {
+  color: var(--text-bright);
+  font-size: 0.9rem;
+}
+
+a.btn {
+  text-decoration: none;
+  display: inline-block;
+}
+
 /* ── 版面 ─────────────────────────────── */
 
 .layout {

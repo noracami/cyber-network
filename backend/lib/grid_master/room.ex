@@ -65,7 +65,9 @@ defmodule GridMaster.Room do
 
   @impl true
   def handle_call({:join, user, channel_pid}, _from, s) do
+    s = migrate_identity(s, user)
     ref = Process.monitor(channel_pid)
+    avatar = Map.get(user, :avatar)
 
     s = %{
       s
@@ -75,8 +77,8 @@ defmodule GridMaster.Room do
           Map.update(
             s.users,
             user.id,
-            %{name: user.name, role: user.role, ready: false},
-            &%{&1 | name: user.name, role: user.role}
+            %{name: user.name, role: user.role, avatar: avatar, ready: false},
+            &Map.merge(&1, %{name: user.name, role: user.role, avatar: avatar})
           )
     }
 
@@ -174,6 +176,8 @@ defmodule GridMaster.Room do
     cond do
       s.status != :lobby -> {:error, :not_in_lobby}
       s.users[user_id] == nil -> {:error, :unknown_user}
+      # 產品規則（2026-07-12 定案）：訪客只能旁觀與聊天，入座需 Discord 登入
+      s.users[user_id].role == "guest" -> {:error, :login_required}
       user_id in s.seats -> {:error, :already_seated}
       length(s.seats) >= @max_seats -> {:error, :room_full}
       true -> {:ok, %{s | seats: s.seats ++ [user_id]}, ["#{name(s, user_id)} 入座"]}
@@ -239,6 +243,57 @@ defmodule GridMaster.Room do
   end
 
   # ── 內部輔助 ────────────────────────────────────────────────
+
+  # 訪客登入 Discord 後身份合併：座位與準備狀態轉移給新身份，移除舊訪客殘影。
+  # 牌局進行中不合併（引擎玩家以舊 id 註冊，中途改名會破壞對應）。
+  defp migrate_identity(s, %{id: new_id} = user) do
+    old_id = Map.get(user, :alias_of)
+
+    cond do
+      old_id in [nil, new_id] ->
+        s
+
+      not Map.has_key?(s.users, old_id) ->
+        s
+
+      s.status == :in_game and old_id in s.seats ->
+        s
+
+      true ->
+        old_user = s.users[old_id]
+        was_seated = old_id in s.seats
+
+        seats =
+          s.seats
+          |> Enum.map(&if(&1 == old_id, do: new_id, else: &1))
+          |> Enum.uniq()
+
+        users =
+          s.users
+          |> Map.delete(old_id)
+          |> Map.put_new(new_id, %{
+            name: user.name,
+            role: user.role,
+            avatar: Map.get(user, :avatar),
+            ready: old_user.ready
+          })
+
+        s = cancel_timer(s, old_id)
+
+        s = %{
+          s
+          | seats: seats,
+            users: users,
+            connections: Map.delete(s.connections, old_id)
+        }
+
+        if was_seated do
+          sysmsg(s, "#{old_user.name} 已登入為 #{user.name}，座位保留")
+        else
+          s
+        end
+    end
+  end
 
   defp handle_offline(s, user_id) do
     cond do
@@ -331,6 +386,7 @@ defmodule GridMaster.Room do
            %{
              name: u.name,
              role: u.role,
+             avatar: Map.get(u, :avatar),
              ready: u.ready,
              online: Map.get(s.connections, id, 0) > 0,
              seated: id in s.seats

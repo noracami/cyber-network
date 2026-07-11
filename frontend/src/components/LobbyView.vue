@@ -10,6 +10,8 @@ const seatCards = computed(() => {
   const filled = room.seats.map((id) => ({ id, ...room.users[id] }))
   return [...filled, ...Array(Math.max(0, MAX_SEATS - filled.length)).fill(null)]
 })
+
+const isGuest = computed(() => !room.self || room.self.role === 'guest')
 </script>
 
 <template>
@@ -32,13 +34,15 @@ const seatCards = computed(() => {
         }"
       >
         <template v-if="seat">
+          <img v-if="seat.avatar" :src="seat.avatar" class="avatar" alt="" />
           <div class="seat-name">{{ seat.name }}</div>
           <div class="seat-badge">
             {{ seat.ready ? '✔ 已準備' : '等待中' }}<span v-if="!seat.online">・離線</span>
           </div>
         </template>
         <template v-else>
-          <button v-if="!room.seated" class="btn ghost" @click="room.seatTake()">入座</button>
+          <a v-if="isGuest" class="btn ghost" href="/auth/discord">登入後入座</a>
+          <button v-else-if="!room.seated" class="btn ghost" @click="room.seatTake()">入座</button>
           <span v-else class="seat-empty">空位</span>
         </template>
       </div>
@@ -53,6 +57,7 @@ const seatCards = computed(() => {
           開始遊戲
         </button>
       </template>
+      <p v-else-if="isGuest" class="hint">用 Discord 登入即可入座；旁觀和聊天不需要登入。</p>
       <p v-else class="hint">點「入座」加入牌局；不入座也可以旁觀和聊天。</p>
     </div>
 

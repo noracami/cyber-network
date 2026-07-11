@@ -34,6 +34,7 @@ const ERROR_TEXT = {
   already_built_here: '你已佔據這個節點',
   unreachable: '無法連通到這個節點',
   forbidden: '權限不足',
+  login_required: '入座需要 Discord 登入',
   timeout: '伺服器回應逾時',
 }
 

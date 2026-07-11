@@ -5,6 +5,10 @@ services:
     build: .devcontainer
     command: sleep infinity
     working_dir: /workspace
+    env_file:
+      # 本地機密（Discord OAuth 金鑰），檔案不存在也不報錯
+      - path: ./backend/.env.dev
+        required: false
     volumes:
       - .:/workspace
       - backend_build:/workspace/backend/_build

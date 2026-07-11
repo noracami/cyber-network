@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 
 const TOKEN_KEY = 'gm_token'
 const NAME_KEY = 'gm_name'
+const DISCORD_KEY = 'gm_discord_token'
 
 /** 確保 localStorage 有一組隨機 token——它就是玩家身份（斷線重連的鑰匙）。 */
 function ensureToken() {
@@ -17,12 +18,23 @@ export const useSettingsStore = defineStore('settings', {
   state: () => ({
     token: ensureToken(),
     name: localStorage.getItem(NAME_KEY) || '',
+    /** Discord 登入 token（後端簽發，30 天有效） */
+    discordToken: localStorage.getItem(DISCORD_KEY) || '',
   }),
   actions: {
     /** @param {string} name */
     setName(name) {
       this.name = name.trim().slice(0, 20)
       localStorage.setItem(NAME_KEY, this.name)
+    },
+    /** @param {string} token */
+    setDiscordToken(token) {
+      this.discordToken = token
+      localStorage.setItem(DISCORD_KEY, token)
+    },
+    clearDiscordToken() {
+      this.discordToken = ''
+      localStorage.removeItem(DISCORD_KEY)
     },
   },
 })

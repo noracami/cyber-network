@@ -1,2 +1,5 @@
 .DS_Store
 *.log
+
+# 本地機密（Discord OAuth 金鑰等），永不進 git
+backend/.env.dev

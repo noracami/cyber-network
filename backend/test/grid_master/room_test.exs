@@ -10,7 +10,8 @@ defmodule GridMaster.RoomTest do
     pid
   end
 
-  defp user(id, role \\ "guest"), do: %{id: id, name: id, role: role}
+  # 入座需登入，測試玩家預設用 discord 身份
+  defp user(id, role \\ "discord"), do: %{id: id, name: id, role: role}
 
   defp join_seated(room, ids) do
     for id <- ids do
@@ -46,6 +47,14 @@ defmodule GridMaster.RoomTest do
       # 遊戲中不能離座、不能再開局
       assert {:error, :not_in_lobby} = Room.lobby_op(room, :seat_leave, "a")
       assert {:error, :not_in_lobby} = Room.lobby_op(room, :game_start, "a")
+    end
+
+    test "訪客不能入座（需 Discord 登入），但能聊天" do
+      room = start_room()
+      Room.join(room, user("g1", "guest"), self())
+
+      assert {:error, :login_required} = Room.lobby_op(room, :seat_take, "g1")
+      assert :ok = Room.chat(room, "g1", "旁觀嘴砲")
     end
 
     test "少於 2 人不能開局；座位上限 6" do
@@ -172,6 +181,67 @@ defmodule GridMaster.RoomTest do
       snapshot = Room.snapshot(room)
       assert snapshot.status == :in_game
       assert "a" in snapshot.seats
+    end
+  end
+
+  describe "身份合併（訪客 → Discord 登入）" do
+    test "旁觀中的訪客登入後，舊訪客殘影移除" do
+      room = start_room()
+      Room.join(room, user("u_guest", "guest"), self())
+
+      # OAuth 重導後以 Discord 身份重連，alias_of 指向原訪客
+      Room.join(
+        room,
+        %{id: "d_42", name: "DC客兒", role: "discord", avatar: "http://a/b.png", alias_of: "u_guest"},
+        self()
+      )
+
+      snapshot = Room.snapshot(room)
+      assert Map.has_key?(snapshot.users, "d_42")
+      refute Map.has_key?(snapshot.users, "u_guest")
+    end
+
+    test "入座中的舊身份（admin token 路徑）登入 Discord，座位與準備狀態跟著走" do
+      room = start_room()
+      Room.join(room, user("u_gm", "admin"), self())
+      :ok = Room.lobby_op(room, :seat_take, "u_gm")
+      :ok = Room.lobby_op(room, :ready, "u_gm")
+
+      Room.join(
+        room,
+        %{id: "d_42", name: "DC客兒", role: "discord", avatar: nil, alias_of: "u_gm"},
+        self()
+      )
+
+      snapshot = Room.snapshot(room)
+      assert snapshot.seats == ["d_42"]
+      assert snapshot.users["d_42"].ready
+      refute Map.has_key?(snapshot.users, "u_gm")
+    end
+
+    test "牌局進行中不合併，避免破壞引擎玩家對應" do
+      room = start_room()
+      join_seated(room, ["u_a", "u_b"])
+      :ok = Room.lobby_op(room, :game_start, "u_a")
+
+      Room.join(
+        room,
+        %{id: "d_9", name: "DC", role: "discord", avatar: nil, alias_of: "u_a"},
+        self()
+      )
+
+      snapshot = Room.snapshot(room)
+      assert "u_a" in snapshot.seats
+      refute "d_9" in snapshot.seats
+      # 兩個身份並存：舊的還是玩家，新的是旁觀者
+      assert Map.has_key?(snapshot.users, "u_a")
+      assert Map.has_key?(snapshot.users, "d_9")
+    end
+
+    test "alias 不存在或相同時不動作" do
+      room = start_room()
+      Room.join(room, %{id: "d_1", name: "DC", role: "discord", avatar: nil, alias_of: "u_nobody"}, self())
+      assert Map.has_key?(Room.snapshot(room).users, "d_1")
     end
   end
 

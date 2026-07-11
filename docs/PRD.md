@@ -43,12 +43,12 @@
 * **配置要點**：使用單一萬能容器（Base 使用 `elixir` 並安裝 `nodejs`）。為了避免 macOS/Windows 的 I/O 效能瓶頸，將後端的 `_build/`、`deps/` 以及前端的 `node_modules/` 使用 **Docker Named Volumes** 隔離在容器內部，不與本地硬碟同步。
 
 
-* **線上部署環境**：**GCP Compute Engine (VM) 搭配 Container-Optimized OS (COS)**
-* **選型理由**：COS 是 Google 優化過的極輕量、唯讀安全作業系統，開機即內建 Docker，不耗費額外記憶體。
+* **線上部署環境**：**既有 GCP VM「wisp」（與其他 side projects 共架，Docker Compose）**
+* **選型理由**：已有多個專案以相同模式穩定運行，零新增基礎設施成本。容器只綁 `127.0.0.1`，VM 不開對外服務 port。（2026-07-12 修訂，原案為新開 COS VM）
 
 
-* **網路與反向代理**：**Caddy (Docker 容器)**
-* **選型理由**：不安裝 GCP HTTP(S) Load Balancer（避免 30 秒 WebSocket 自動斷線的坑）。由 VM 直接暴露固定外部 IP，內部用 Caddy 容器自動處理 SSL 憑證（Let's Encrypt）並完美支援 WebSocket 長連線轉發。
+* **網路入口**：**Cloudflare Tunnel（cloudflared）**
+* **選型理由**：TLS 憑證與 DNS 全由 Cloudflare 處理，免 Caddy／Let's Encrypt／固定 IP 管理，同樣避開 GCP Load Balancer 的 WebSocket 斷線坑。注意：Cloudflare 會切斷閒置 100 秒的連線，Phoenix Channel 預設 30 秒 heartbeat 天然滿足保活需求。（2026-07-12 修訂，原案為 Caddy）
 
 
 
@@ -67,6 +67,7 @@ $$\text{等待開始遊戲 (Lobby)} \longrightarrow \text{遊戲中 (In-Game)} \
 
 * **全域身份**：`Guest`（未登入訪客）、`Discord User`（已登入使用者）、`Admin`（管理員，開發期提供專屬 API/UI 可任意手動調整連線者的身份）。
 * **遊戲角色**：`Player`（已入座玩家，上限 6 人）、`Spectator`（旁觀者）。
+* **入座門檻（2026-07-12 定案）**：僅 `Discord User` 與 `Admin` 可入座成為 Player；`Guest` 只能旁觀與聊天。
 
 ### 3.3 核心功能矩陣
 
@@ -130,23 +131,23 @@ MVP 階段地圖與卡牌採用靜態 JSON 檔案（`usa_map.json` / `cyber_deck
 
 ## 6. CI/CD 自動化通車管線 (Deployment Pipeline)
 
-採用 **Image-Driven（映像檔驅動）** 的自動化部署管線：
+採用 **Image-Driven（映像檔驅動）** 的自動化部署管線。（2026-07-12 修訂：registry 由 GAR 改為 GHCR、部署觸發改用 VM 上既有的 webhook 服務、前後端合併為單一映像檔）
 
 ```
-                                  ┌──> 打包前端 Nginx 映像檔 ──> 推送至 GAR ┐
-[Code Push to main] ➔ GitHub Actions                                       ├─> SSH 觸發 GCP VM ➔ docker compose pull & up
-                                  └──> 打包後端 Elixir 映像檔 ──> 推送至 GAR ┘
-
+[Push to main] ➔ GitHub Actions
+   ① mix test（掛 Postgres service container；不過就不部署）
+   ② docker build 單一多階段映像檔（node 建前端 dist → Elixir release，
+      dist 放入 priv/static 由 Phoenix 同源服務）
+   ③ push ghcr.io/<owner>/grid-master:{sha, latest}
+   ④ 呼叫 wisp 的 webhook（cloudflared ingress /hooks/*）
+                        ⬇
+[wisp VM] webhook 腳本：docker compose pull && docker compose up -d
+                        && docker image prune -f
 ```
 
-1. **GitHub Actions 階段**：
-* 前端執行編譯，並將靜態檔打包進一個基於 `Nginx` 的 Docker Image。
-* 後端執行 `mix test` 跑通單元測試，通過後打包進生產環境 Docker Image。
-* 將前後端 Images 同時推送到 **GCP Artifact Registry (GAR)**。
-
-
-2. **VM 部署階段**：
-* GitHub Actions 透過 SSH 連線至 GCP VM，執行 `docker compose pull` 與 `docker compose up -d`，實現遠端零停機容器滾動更新。
+1. **GitHub Actions 階段**：前後端打包為**單一映像檔**——Phoenix 同源服務 SPA、`/api` 與 WebSocket，免去 Nginx 容器與跨域設定；`mix test` 是部署閘門。在 CI 上 build 也避免消耗 VM 珍貴的磁碟空間（builder 環境不落地 VM）。
+2. **VM 部署階段**：`~/grid-master/` 只放 `docker-compose.prod.yml`（引用 GHCR image、綁 `127.0.0.1:8100`、Postgres sidecar）與 `.env`（SECRET_KEY_BASE／ADMIN_TOKEN／Discord 金鑰／PG 密碼）。對外由 Cloudflare Tunnel 的 `gridmaster.miao-bao.cc → localhost:8100` ingress 分流。
+3. **已知限制**：遊戲狀態全在 GenServer 記憶體，部署重啟會清空進行中牌局。webhook 腳本部署前應先查詢是否有進行中對局，有則中止部署（提供 force 參數覆寫）。
 
 ---
 

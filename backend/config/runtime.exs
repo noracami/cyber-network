@@ -23,6 +23,18 @@ end
 config :grid_master, GridMasterWeb.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
+# Discord ID 為準的 admin 授權（逗號分隔清單），生產環境建議用這個而非 ADMIN_TOKEN
+config :grid_master,
+  admin_discord_ids: "ADMIN_DISCORD_IDS" |> System.get_env("") |> String.split(",", trim: true)
+
+# Discord OAuth（所有環境皆由環境變數提供；開發值放 backend/.env.dev，不進 git）
+config :grid_master, :discord_oauth,
+  client_id: System.get_env("DISCORD_CLIENT_ID"),
+  client_secret: System.get_env("DISCORD_CLIENT_SECRET"),
+  redirect_uri:
+    System.get_env("DISCORD_REDIRECT_URI") || "http://localhost:4000/auth/discord/callback",
+  frontend_url: System.get_env("FRONTEND_URL") || "http://localhost:5173"
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||

@@ -9,8 +9,9 @@ export default defineConfig({
     host: true,
     port: 5173,
     proxy: {
-      // 開發環境把 /api 轉給 Phoenix，生產環境由 Caddy 處理同源轉發
+      // 開發環境把 /api 與 /auth 轉給 Phoenix；生產環境天然同源（Phoenix 服務 SPA）
       '/api': 'http://localhost:4000',
+      '/auth': 'http://localhost:4000',
     },
   },
 })

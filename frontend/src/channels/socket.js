@@ -22,7 +22,12 @@ export function connect() {
   const chat = useChatStore()
 
   socket = new Socket(wsUrl(), {
-    params: { token: settings.token, name: settings.name || '訪客' },
+    params: {
+      token: settings.token,
+      name: settings.name || '訪客',
+      // 有 Discord 登入 token 就帶上；後端驗簽成功即用 Discord 身份，失敗退回訪客
+      ...(settings.discordToken ? { discord_token: settings.discordToken } : {}),
+    },
   })
   socket.onOpen(() => {
     room.connected = true

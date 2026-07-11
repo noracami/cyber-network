@@ -13,7 +13,20 @@ const room = useRoomStore()
 const settings = useSettingsStore()
 const staticStore = useStaticStore()
 
+/** OAuth callback 用 URL hash 帶回登入 token（或錯誤標記） */
+function consumeAuthHash() {
+  const hash = location.hash
+  if (hash.startsWith('#discord_token=')) {
+    settings.setDiscordToken(decodeURIComponent(hash.slice('#discord_token='.length)))
+    history.replaceState(null, '', location.pathname)
+  } else if (hash.startsWith('#discord_error')) {
+    room.flashError('Discord 登入失敗，請再試一次')
+    history.replaceState(null, '', location.pathname)
+  }
+}
+
 onMounted(() => {
+  consumeAuthHash()
   staticStore.load()
   connect()
 })
@@ -25,6 +38,11 @@ function changeName() {
     reconnect()
   }
 }
+
+function logoutDiscord() {
+  settings.clearDiscordToken()
+  reconnect()
+}
 </script>
 
 <template>
@@ -33,9 +51,19 @@ function changeName() {
       <h1>⚡ Grid Master <span class="sub">CYBER NETWORK</span></h1>
       <div class="user-box">
         <span class="conn-dot" :class="room.connected ? 'on' : 'off'" :title="room.connected ? '已連線' : '連線中斷'"></span>
-        <button class="btn ghost" @click="changeName">
-          {{ room.self?.name || settings.name || '設定暱稱' }}
-        </button>
+
+        <template v-if="settings.discordToken">
+          <img v-if="room.self?.avatar" :src="room.self.avatar" class="avatar" alt="" />
+          <span class="self-name">{{ room.self?.name }}</span>
+          <button class="btn ghost" @click="logoutDiscord">登出</button>
+        </template>
+        <template v-else>
+          <button class="btn ghost" @click="changeName">
+            {{ room.self?.name || settings.name || '設定暱稱' }}
+          </button>
+          <a class="btn primary" href="/auth/discord">Discord 登入</a>
+        </template>
+
         <button
           v-if="room.isAdmin && room.status !== 'lobby'"
           class="btn danger"
