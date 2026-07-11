@@ -17,7 +17,9 @@ defmodule GridMasterWeb do
   those modules here.
   """
 
-  def static_paths, do: ~w(assets fonts images favicon.ico robots.txt)
+  # index.html / favicon.svg / icons.svg：生產映像檔內的 Vue dist（Phoenix 同源服務 SPA）
+  def static_paths,
+    do: ~w(assets fonts images favicon.ico favicon.svg icons.svg robots.txt index.html)
 
   def router do
     quote do

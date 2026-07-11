@@ -1,0 +1,29 @@
+# 放置於 wisp:/opt/grid-master/docker-compose.prod.yml
+# 對外走 Cloudflare Tunnel（gridmaster.miao-bao.cc → localhost:8100），VM 不開對外 port。
+services:
+  app:
+    image: ghcr.io/noracami/cyber-network:latest
+    container_name: grid-master
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8100:4000"
+    env_file: .env
+    environment:
+      DATABASE_URL: ecto://grid_master:${PG_PASSWORD}@db/grid_master_prod
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16-alpine
+    container_name: grid-master-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: grid_master
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: grid_master_prod
+    volumes:
+      - gm-pgdata:/var/lib/postgresql/data
+    # 不對外公開 port，只在 compose 內部網路供 app 連線
+
+volumes:
+  gm-pgdata:

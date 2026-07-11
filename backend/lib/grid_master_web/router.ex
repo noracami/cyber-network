@@ -13,6 +13,12 @@ defmodule GridMasterWeb.Router do
     pipe_through :api
 
     get "/static", StaticDataController, :show
+    get "/activity", ActivityController, :show
+  end
+
+  # SPA 入口（生產環境由 Phoenix 服務 Vue dist），不走 :api 的 JSON 協商
+  scope "/", GridMasterWeb do
+    get "/", PageController, :index
   end
 
   scope "/auth", GridMasterWeb do

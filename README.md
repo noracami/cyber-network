@@ -21,6 +21,15 @@
    cd frontend && npm install && npm run dev                          # http://localhost:5173
    ```
 
+## 部署
+
+正式站：https://gridmaster.miao-bao.cc （GCP VM「wisp」共架，對外走 Cloudflare Tunnel）
+
+Push 到 `main` → GitHub Actions：`mix test`（閘門）→ build 單一映像檔（前端 dist 由
+Phoenix 同源服務）→ push GHCR → 打 wisp 的 webhook → VM 上 `compose pull && up -d`。
+部署腳本會先查 `/api/activity`，**有進行中牌局就中止**（遊戲狀態在記憶體，重啟即蒸發）；
+webhook 加 `?force=force` 可強制。VM 端檔案在 `/opt/grid-master/`，範本見 [deploy/](deploy/)。
+
 ## 文件
 
 - [docs/PRD.md](docs/PRD.md) — 開發規格說明書（PRD）

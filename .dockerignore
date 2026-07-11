@@ -1,0 +1,13 @@
+.git
+.devcontainer
+docs
+backend/_build
+backend/deps
+backend/.env.dev
+frontend/node_modules
+frontend/dist
+docker-compose.yml
+deploy
+Dockerfile
+.dockerignore
+*.md

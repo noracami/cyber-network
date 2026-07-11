@@ -1,0 +1,17 @@
+{
+  "_說明": "此片段加入 wisp:/opt/wisp/scripts/webhook-hooks.json 陣列，然後 sudo systemctl restart deploy-webhook。<DEPLOY_TOKEN> 換成隨機值，並同步設進 GitHub repo secret。",
+  "id": "deploy-gridmaster",
+  "execute-command": "/opt/grid-master/scripts/deploy.sh",
+  "command-working-directory": "/opt/grid-master",
+  "pass-arguments-to-command": [
+    { "source": "url", "name": "force" }
+  ],
+  "trigger-rule": {
+    "match": {
+      "type": "value",
+      "value": "<DEPLOY_TOKEN>",
+      "parameter": { "source": "header", "name": "X-Deploy-Token" }
+    }
+  },
+  "trigger-rule-mismatch-http-response-code": 401
+}
