@@ -12,8 +12,10 @@ defmodule GridMaster.Application do
       GridMaster.Repo,
       {DNSCluster, query: Application.get_env(:grid_master, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: GridMaster.PubSub},
-      # Start a worker by calling: GridMaster.Worker.start_link(arg)
-      # {GridMaster.Worker, arg},
+      GridMasterWeb.Presence,
+      # 遊戲房間：Registry 查找 + DynamicSupervisor 隨需啟動
+      {Registry, keys: :unique, name: GridMaster.RoomRegistry},
+      {DynamicSupervisor, name: GridMaster.RoomSupervisor, strategy: :one_for_one},
       # Start to serve requests, typically the last entry
       GridMasterWeb.Endpoint
     ]

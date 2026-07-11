@@ -57,6 +57,9 @@ if config_env() == :prod do
 
   config :grid_master, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
+  # Admin token：未設定則生產環境無人能取得 admin 身份（安全預設）
+  config :grid_master, admin_token: System.get_env("ADMIN_TOKEN")
+
   config :grid_master, GridMasterWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     http: [
