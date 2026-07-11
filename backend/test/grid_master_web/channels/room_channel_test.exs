@@ -33,13 +33,14 @@ defmodule GridMasterWeb.RoomChannelTest do
     refute socket_a.assigns.user.id == socket_c.assigns.user.id
   end
 
-  test "join 回傳大廳快照與聊天歷史" do
+  test "join 回傳大廳快照、聊天歷史與自己的身份" do
     socket = connect_user("guest-token-0001", "小明")
-    {snapshot, _socket} = join_room(socket, new_room_id())
+    {snapshot, socket} = join_room(socket, new_room_id())
 
     assert snapshot.status == :lobby
     assert snapshot.chat == []
     assert snapshot.game == nil
+    assert snapshot.self == socket.assigns.user.id
   end
 
   test "入座 → 廣播 room_sync；聊天 → 廣播 chat_new" do
