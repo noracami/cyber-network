@@ -1,5 +1,8 @@
 # ⚡ 《Grid Master: Cyber Network》第一版開發規格說明書 (PRD)
 
+> v1.0 已於 2026-07-12 上線（https://gridmaster.miao-bao.cc）。首輪實測回饋整理成
+> [PRD-v1.1.md](PRD-v1.1.md)（地圖體驗、資訊透明化、規則彈窗、帳密登入）。
+
 ## 1. 專案範疇與 MVP 目標
 
 本專案是一款**致敬經典桌遊《電力公司（Power Grid / Funkenschlag）》**的多人連線網頁遊戲，不需下載大廳、直覺、任務導向。核心遊戲規則完整沿用《電力公司》的系統設計，僅在主題與美術上全面換皮（Reskin）為科技風。第一階段（MVP / First Version）跳過動態編輯器的 UI 開發，**以硬編碼（Hard-coded）載入基本版美國地圖與科技主題卡牌牌庫**。
