@@ -52,8 +52,11 @@ export const useRoomStore = defineStore('room', {
     game: null,
     /** @type {object | null} 終局排名 */
     result: null,
-    /** @type {object[]} 最近一批 game_events（M5 動畫層使用） */
+    /** @type {object[]} 最近一批 game_events */
     lastEvents: [],
+    /** @type {object[]} 事件日誌（GameLog 顯示，上限 120 筆） */
+    eventLog: [],
+    eventSeq: 0,
     /** @type {string | null} */
     lastError: null,
     /** @type {ReturnType<typeof setTimeout> | null} */
@@ -100,6 +103,12 @@ export const useRoomStore = defineStore('room', {
     },
     applyEvents(events) {
       this.lastEvents = events
+      for (const event of events) {
+        this.eventLog.push({ seq: ++this.eventSeq, ...event })
+      }
+      if (this.eventLog.length > 120) {
+        this.eventLog.splice(0, this.eventLog.length - 120)
+      }
     },
 
     // --- 對後端的操作 ---

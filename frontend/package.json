@@ -11,6 +11,7 @@
   "dependencies": {
     "phoenix": "^1.8.9",
     "pinia": "^3.0.4",
+    "pixi.js": "^8.19.0",
     "vue": "^3.5.39"
   },
   "devDependencies": {

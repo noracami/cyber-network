@@ -424,6 +424,335 @@ code {
   opacity: 0;
 }
 
+/* ── 遊戲盤面（M5） ───────────────────── */
+
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.game {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.game-main {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.map-area {
+  flex: 1;
+  min-width: 0;
+}
+
+.side-col {
+  width: 340px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.phase-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.phase-banner.my-turn {
+  border-color: var(--cyan);
+  box-shadow: 0 0 14px var(--cyan-dim);
+}
+
+.pb-round,
+.pb-step {
+  font-family: var(--mono);
+  color: var(--text-dim);
+  font-size: 0.78rem;
+}
+
+.pb-phase {
+  color: var(--text-bright);
+  font-weight: 600;
+}
+
+.pb-final {
+  color: var(--red);
+  font-weight: 600;
+}
+
+.pb-status {
+  margin-left: auto;
+  color: var(--cyan);
+}
+
+/* 地圖 */
+
+.map-wrap {
+  position: relative;
+  padding: 0;
+  overflow: hidden;
+}
+
+.map-canvas {
+  width: 100%;
+  height: 520px;
+}
+
+.map-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--bg-raised);
+  border: 1px solid var(--cyan);
+  color: var(--text-bright);
+  font-size: 0.8rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  z-index: 5;
+}
+
+.map-confirm {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  background: var(--bg-raised);
+  border: 1px solid var(--cyan);
+  border-radius: 10px;
+  padding: 10px 16px;
+  z-index: 6;
+  text-align: center;
+}
+
+.map-confirm p {
+  margin: 0 0 8px;
+}
+
+/* 卡牌 */
+
+.plant-card {
+  width: 88px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  background: var(--bg-raised);
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.plant-card.clickable {
+  cursor: pointer;
+  border-color: var(--cyan);
+}
+
+.plant-card.clickable:hover {
+  box-shadow: 0 0 10px var(--cyan-dim);
+}
+
+.plant-card.selected {
+  border-color: var(--cyan);
+  background: var(--cyan-dim);
+}
+
+.plant-card.dimmed {
+  opacity: 0.45;
+}
+
+.pc-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.pc-number {
+  font-family: var(--mono);
+  font-size: 1.15rem;
+  color: var(--text-bright);
+  font-weight: 700;
+}
+
+.pc-name {
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  line-height: 1.3;
+  min-height: 2.6em;
+  margin: 2px 0;
+}
+
+.pc-stats {
+  font-size: 0.72rem;
+  color: var(--text);
+}
+
+.pc-step3 {
+  font-family: var(--mono);
+  text-align: center;
+  color: var(--red);
+  font-weight: 700;
+  padding: 12px 0;
+}
+
+.plant-card.step3 {
+  border-color: var(--red);
+}
+
+/* 市場 */
+
+.market-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.nominate-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.nominate-form input {
+  width: 64px;
+  font: inherit;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-bright);
+}
+
+/* 玩家列 */
+
+.player-strip {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.player-chip {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  min-width: 170px;
+}
+
+.player-chip.self {
+  border-color: var(--cyan);
+}
+
+.pc-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+}
+
+.pc-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.mini-plant,
+.mini-res {
+  font-size: 0.75rem;
+}
+
+/* 操作面板 */
+
+.action-dock {
+  min-height: 64px;
+}
+
+.dock-section h3 {
+  font-size: 0.95rem;
+  margin-bottom: 8px;
+}
+
+.dock-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.dock-cards {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.bid-input {
+  width: 76px;
+  font: inherit;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-bright);
+}
+
+.btn.sm {
+  padding: 2px 10px;
+}
+
+.resource-steppers {
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stepper-label {
+  font-size: 0.85rem;
+}
+
+.stepper-qty {
+  font-family: var(--mono);
+  min-width: 1.6em;
+  text-align: center;
+  color: var(--text-bright);
+}
+
+.error {
+  color: var(--red);
+}
+
+/* 事件紀錄 */
+
+.game-log .log-list {
+  max-height: 180px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.log-line {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
 /* ── 窄螢幕 ───────────────────────────── */
 
 @media (max-width: 860px) {
@@ -434,5 +763,17 @@ code {
   .chat {
     width: 100%;
     max-height: 320px;
+  }
+
+  .game-main {
+    flex-direction: column;
+  }
+
+  .side-col {
+    width: 100%;
+  }
+
+  .map-canvas {
+    height: 380px;
   }
 }

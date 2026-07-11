@@ -7,11 +7,16 @@ import GameView from './components/GameView.vue'
 import LobbyView from './components/LobbyView.vue'
 import { useRoomStore } from './stores/room'
 import { useSettingsStore } from './stores/settings'
+import { useStaticStore } from './stores/staticData'
 
 const room = useRoomStore()
 const settings = useSettingsStore()
+const staticStore = useStaticStore()
 
-onMounted(() => connect())
+onMounted(() => {
+  staticStore.load()
+  connect()
+})
 
 function changeName() {
   const name = window.prompt('輸入暱稱（最多 20 字）', settings.name)

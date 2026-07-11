@@ -7,5 +7,7 @@ defmodule GridMasterWeb.Router do
 
   scope "/api", GridMasterWeb do
     pipe_through :api
+
+    get "/static", StaticDataController, :show
   end
 end
