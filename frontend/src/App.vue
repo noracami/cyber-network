@@ -86,8 +86,31 @@ function backToMain() {
 
 <template>
   <div class="app">
+    <!-- 連線 splash：拿到第一份房間快照前的過場（demo 模式直接灌資料，不會經過） -->
+    <transition name="fade">
+      <div v-if="!demo && !room.selfId" class="splash">
+        <svg class="splash-logo" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2.2 L20.5 7.1 V16.9 L12 21.8 L3.5 16.9 V7.1 Z" stroke="#37e6d4" stroke-width="1.6" stroke-linejoin="round" />
+          <path d="M13.2 6.5 L8.6 13 H11.4 L10.4 17.5 L15.6 10.6 H12.6 L13.2 6.5 Z" fill="#37e6d4" />
+          <line x1="12" y1="0" x2="12" y2="2.2" stroke="#37e6d4" stroke-width="1.4" />
+          <line x1="12" y1="21.8" x2="12" y2="24" stroke="#37e6d4" stroke-width="1.4" />
+        </svg>
+        <div class="splash-title">GRID MASTER</div>
+        <div class="splash-sub">CYBER NETWORK</div>
+        <div class="splash-status">{{ room.connected ? '進入房間…' : '連線中…' }}</div>
+      </div>
+    </transition>
+
     <header class="topbar">
-      <h1>⚡ Grid Master <span class="sub">CYBER NETWORK</span></h1>
+      <h1>
+        <svg class="logo" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M12 2.2 L20.5 7.1 V16.9 L12 21.8 L3.5 16.9 V7.1 Z" stroke="#37e6d4" stroke-width="1.6" stroke-linejoin="round" />
+          <path d="M13.2 6.5 L8.6 13 H11.4 L10.4 17.5 L15.6 10.6 H12.6 L13.2 6.5 Z" fill="#37e6d4" />
+          <line x1="12" y1="0" x2="12" y2="2.2" stroke="#37e6d4" stroke-width="1.4" />
+          <line x1="12" y1="21.8" x2="12" y2="24" stroke="#37e6d4" stroke-width="1.4" />
+        </svg>
+        Grid Master <span class="sub">CYBER NETWORK</span>
+      </h1>
       <div v-if="room.roomId !== 'main'" class="room-chip">
         <span class="room-code">#{{ room.roomId }}</span>
         <button class="btn ghost" @click="copyRoomLink()">

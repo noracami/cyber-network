@@ -1,5 +1,15 @@
 /* ⚡ Grid Master: Cyber Network — 全域樣式（深色賽博風） */
 
+/* display 字型（v1.5 R4 定案）：Orbitron latin 子集（拉丁＋數字，~12KB variable 檔）。
+   中文不在字面內，自動 fallback 系統黑體——所有混排靠這條規則成立。 */
+@font-face {
+  font-family: 'Orbitron';
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/orbitron-latin.woff2') format('woff2');
+}
+
 :root {
   --bg: #0b0e17;
   --bg-panel: #121627;
@@ -13,7 +23,9 @@
   --purple: #9d6bff;
   --red: #ff5470;
   --green: #4ade80;
-  --mono: 'SF Mono', 'Cascadia Code', Consolas, monospace;
+  /* 數字／代碼類 UI 全走 display 字型；密集小字（聊天時間戳）用 --mono-plain */
+  --mono: 'Orbitron', 'SF Mono', 'Cascadia Code', Consolas, monospace;
+  --mono-plain: 'SF Mono', 'Cascadia Code', Consolas, monospace;
 }
 
 * {
@@ -57,6 +69,82 @@ code {
   font-weight: normal;
 }
 
+/* ── 連線 splash（R4）────────────────────── */
+
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--bg);
+  background-image:
+    linear-gradient(rgba(55, 230, 212, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(55, 230, 212, 0.03) 1px, transparent 1px);
+  background-size: 42px 42px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.splash-logo {
+  width: 84px;
+  height: 84px;
+  animation: splash-pulse 1.8s ease-in-out infinite;
+}
+
+.splash-title {
+  font-family: 'Orbitron', 'Noto Sans TC', sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  letter-spacing: 0.12em;
+  color: var(--text-bright);
+  margin-top: 8px;
+}
+
+.splash-sub {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.5em;
+  color: var(--cyan);
+  /* letter-spacing 會在字尾多出一格，往右補償讓視覺置中 */
+  margin-right: -0.5em;
+}
+
+.splash-status {
+  margin-top: 22px;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  animation: splash-blink 1.4s ease-in-out infinite;
+}
+
+@keyframes splash-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 6px rgba(55, 230, 212, 0.25));
+  }
+  50% {
+    filter: drop-shadow(0 0 22px rgba(55, 230, 212, 0.6));
+  }
+}
+
+@keyframes splash-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-logo,
+  .splash-status {
+    animation: none;
+  }
+}
+
 /* ── 頂欄 ─────────────────────────────── */
 
 .topbar {
@@ -72,8 +160,19 @@ code {
 
 .topbar h1 {
   margin: 0;
-  font-size: 1.15rem;
-  letter-spacing: 0.02em;
+  font-family: 'Orbitron', 'Noto Sans TC', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.topbar .logo {
+  width: 26px;
+  height: 26px;
+  flex: none;
 }
 
 .topbar .sub {
@@ -381,6 +480,66 @@ a.btn {
 
 /* ── 終局 ─────────────────────────────── */
 
+.go-hero {
+  text-align: center;
+  padding: 26px 16px 18px;
+  border: 1px solid var(--cyan);
+  border-radius: 12px;
+  background:
+    radial-gradient(ellipse at top, rgba(55, 230, 212, 0.1), transparent 65%),
+    var(--bg-panel);
+  margin-bottom: 16px;
+}
+
+.go-trophy {
+  font-size: 2.2rem;
+}
+
+.go-winner {
+  font-family: 'Orbitron', 'Noto Sans TC', sans-serif;
+  font-weight: 700;
+  font-size: 1.7rem;
+  color: var(--text-bright);
+  margin-top: 4px;
+}
+
+.go-caption {
+  font-family: 'Orbitron', 'Noto Sans TC', sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.28em;
+  color: var(--cyan);
+  margin-top: 8px;
+}
+
+.rank-badge {
+  font-family: var(--mono);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+.rank-badge.rank-1 {
+  border-color: #f5c84c;
+  color: #f5c84c;
+  box-shadow: 0 0 10px rgba(245, 200, 76, 0.35);
+}
+
+.rank-badge.rank-2 {
+  border-color: #c8d3ea;
+  color: #c8d3ea;
+}
+
+.rank-badge.rank-3 {
+  border-color: #d29a6b;
+  color: #d29a6b;
+}
+
 .winner-line {
   font-size: 1.1rem;
 }
@@ -501,7 +660,7 @@ a.btn {
 
 .chat-time {
   color: var(--text-dim);
-  font-family: var(--mono);
+  font-family: var(--mono-plain);
   font-size: 0.72rem;
   margin-right: 6px;
 }

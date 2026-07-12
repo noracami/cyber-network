@@ -9,10 +9,12 @@ const ranking = computed(() => room.result?.ranking || [])
 
 <template>
   <div class="game-over">
-    <h2>🏁 遊戲結束</h2>
-    <p v-if="room.result" class="winner-line">
-      🏆 <strong>{{ room.nameOf(room.result.winner) }}</strong> 獲勝！
-    </p>
+    <div v-if="room.result" class="go-hero">
+      <div class="go-trophy">🏆</div>
+      <div class="go-winner">{{ room.nameOf(room.result.winner) }}</div>
+      <div class="go-caption">GRID MASTER — 網域由此定名</div>
+    </div>
+    <h2 v-else>🏁 遊戲結束</h2>
 
     <table class="ranking">
       <thead>
@@ -26,7 +28,7 @@ const ranking = computed(() => room.result?.ranking || [])
       </thead>
       <tbody>
         <tr v-for="(row, index) in ranking" :key="row.player" :class="{ self: row.player === room.selfId }">
-          <td>{{ index + 1 }}</td>
+          <td><span class="rank-badge" :class="`rank-${index + 1}`">{{ index + 1 }}</span></td>
           <td>{{ room.nameOf(row.player) }}</td>
           <td>{{ row.powered }}</td>
           <td>{{ row.credits }}</td>
