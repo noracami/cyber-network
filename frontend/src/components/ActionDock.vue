@@ -7,6 +7,7 @@ import { useRoomStore } from '../stores/room'
 import { useStaticStore } from '../stores/staticData'
 import { useUiStore } from '../stores/ui'
 import PlantCard from './PlantCard.vue'
+import ResourceLadder from './ResourceLadder.vue'
 import ResourceMarket from './ResourceMarket.vue'
 
 const room = useRoomStore()
@@ -42,13 +43,17 @@ const myResourceTurn = computed(
 watch(
   () => game.value?.phase,
   () => {
-    Object.assign(qty, { hydro: 0, thermal: 0, waste: 0, quantum: 0 })
+    resetQty()
     chosen.value = new Set()
   }
 )
 
 const priceOf = (resource) =>
   ladderCost(resource, game.value.resource_market[resource].count, qty[resource])
+
+function resetQty() {
+  Object.assign(qty, { hydro: 0, thermal: 0, waste: 0, quantum: 0 })
+}
 
 const totalPrice = computed(() =>
   RESOURCES.reduce((sum, resource) => sum + (priceOf(resource) ?? 0), 0)
@@ -145,22 +150,34 @@ function submitPower() {
       <p v-else class="hint">你本回合的競標已結束。</p>
     </template>
 
-    <!-- 採購資源階段：資源市場移進採購區塊（v1.2），調整數量即時預覽買走哪些格位 -->
+    <!-- 採購資源階段（v1.2）：市場與採購合併——每列＝±／名稱／價格梯（含 −單價 預覽）／小計 -->
     <template v-else-if="game.phase === 'resources'">
-      <ResourceMarket embedded :pending="myResourceTurn ? qty : null" />
       <div v-if="myResourceTurn" class="dock-section">
         <h3>採購資源（反序輪到你）</h3>
-        <div class="dock-row resource-steppers">
-          <div v-for="(meta, resource) in RESOURCE_META" :key="resource" class="stepper">
-            <span class="stepper-label">{{ meta.icon }} {{ meta.label }}</span>
-            <button class="btn ghost sm" @click="step(resource, -1)">−</button>
-            <span class="stepper-qty">{{ qty[resource] }}</span>
-            <button class="btn ghost sm" @click="step(resource, 1)">＋</button>
-            <span class="hint">${{ priceOf(resource) ?? '—' }}</span>
+        <div class="buy-rows">
+          <div v-for="(meta, resource) in RESOURCE_META" :key="resource" class="buy-row">
+            <div class="buy-steppers">
+              <button class="btn ghost sm" @click="step(resource, 1)">＋</button>
+              <button class="btn ghost sm" :disabled="qty[resource] === 0" @click="step(resource, -1)">－</button>
+            </div>
+            <span class="buy-name">{{ meta.icon }} {{ meta.label }}</span>
+            <ResourceLadder
+              :resource="resource"
+              :count="game.resource_market[resource].count"
+              :taking="qty[resource]"
+            />
+            <span class="buy-subtotal" :class="{ hint: qty[resource] === 0 }">
+              ${{ priceOf(resource) ?? '—' }}
+            </span>
           </div>
         </div>
         <div class="dock-row">
-          <strong>總價 ${{ totalPrice }}</strong>
+          <span class="buy-math">
+            💰<span class="num-box">{{ me.credits }}</span> −
+            <span class="num-box">${{ totalPrice }}</span> ＝ 剩
+            <span class="num-box" :class="{ error: me.credits - totalPrice < 0 }">${{ me.credits - totalPrice }}</span>
+          </span>
+          <button class="btn ghost" :disabled="totalPrice === 0" @click="resetQty">清除</button>
           <button
             class="btn primary"
             :disabled="totalPrice > me.credits"
@@ -171,7 +188,10 @@ function submitPower() {
           <button class="btn ghost" @click="room.gameAction('resources_buy', {})">跳過</button>
         </div>
       </div>
-      <p v-else class="hint">等待 {{ room.nameOf(phaseState.queue?.[0]) }} 採購資源…</p>
+      <template v-else>
+        <ResourceMarket embedded />
+        <p class="hint">等待 {{ room.nameOf(phaseState.queue?.[0]) }} 採購資源…</p>
+      </template>
     </template>
 
     <!-- 擴建階段 -->

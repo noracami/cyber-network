@@ -64,7 +64,7 @@ function resupplyText(amounts) {
 </script>
 
 <template>
-  <div v-if="ui.rulesTab" class="modal-mask" @click.self="ui.closeRules()">
+  <div v-if="ui.rulesTab" class="modal-mask top-aligned" @click.self="ui.closeRules()">
     <div class="modal-box rules-modal">
       <div class="rules-head">
         <h3>📖 規則說明</h3>

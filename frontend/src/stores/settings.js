@@ -5,6 +5,7 @@ const NAME_KEY = 'gm_name'
 const DISCORD_KEY = 'gm_discord_token'
 const PASSWORD_KEY = 'gm_password_token'
 const MAP_LAYOUT_KEY = 'gm_map_layout'
+const MAP_NAV_KEY = 'gm_map_nav'
 
 /** 確保 localStorage 有一組隨機 token——它就是玩家身份（斷線重連的鑰匙）。 */
 function ensureToken() {
@@ -24,8 +25,10 @@ export const useSettingsStore = defineStore('settings', {
     discordToken: localStorage.getItem(DISCORD_KEY) || '',
     /** 帳密登入 token（M10；同為後端簽發、30 天有效） */
     passwordToken: localStorage.getItem(PASSWORD_KEY) || '',
-    /** 地圖佈局：'geo' 地理位置｜'grid' 垂直水平線路 */
-    mapLayout: localStorage.getItem(MAP_LAYOUT_KEY) === 'grid' ? 'grid' : 'geo',
+    /** 地圖佈局：'grid' 垂直水平線路（預設）｜'geo' 地理位置 */
+    mapLayout: localStorage.getItem(MAP_LAYOUT_KEY) === 'geo' ? 'geo' : 'grid',
+    /** 地圖縮放平移：預設關閉（鎖定全覽），使用者可開 */
+    mapNav: localStorage.getItem(MAP_NAV_KEY) === 'on',
   }),
   actions: {
     /** @param {string} name */
@@ -54,6 +57,10 @@ export const useSettingsStore = defineStore('settings', {
     toggleMapLayout() {
       this.mapLayout = this.mapLayout === 'grid' ? 'geo' : 'grid'
       localStorage.setItem(MAP_LAYOUT_KEY, this.mapLayout)
+    },
+    toggleMapNav() {
+      this.mapNav = !this.mapNav
+      localStorage.setItem(MAP_NAV_KEY, this.mapNav ? 'on' : 'off')
     },
   },
 })

@@ -21,6 +21,15 @@ export class MapBoard {
     this.pointers = new Map()
     this.moved = false
     this.pinchBase = null
+    /** 縮放平移開關（預設關；MapBoard 依使用者設定切換） */
+    this.navEnabled = false
+  }
+
+  /** @param {boolean} enabled 關閉時回到全覽並把觸控行為還給頁面捲動 */
+  setNav(enabled) {
+    this.navEnabled = enabled
+    if (this.app) this.app.canvas.style.touchAction = enabled ? 'none' : 'auto'
+    if (!enabled) this.fitView()
   }
 
   /** @param {HTMLElement} host */
@@ -105,7 +114,7 @@ export class MapBoard {
   /** 拖曳平移＋滾輪縮放＋雙指 pinch，DOM pointer 事件實作；節點點擊仍走 Pixi 事件 */
   bindNavigation() {
     const canvas = this.app.canvas
-    canvas.style.touchAction = 'none'
+    canvas.style.touchAction = this.navEnabled ? 'none' : 'auto'
 
     canvas.addEventListener('pointerdown', (event) => {
       canvas.setPointerCapture(event.pointerId)
@@ -129,6 +138,8 @@ export class MapBoard {
       if (Math.abs(pointer.x - pointer.sx) + Math.abs(pointer.y - pointer.sy) > TAP_SLOP) {
         this.moved = true
       }
+
+      if (!this.navEnabled) return
 
       if (this.pointers.size === 1) {
         this.viewport.x += dx
@@ -158,6 +169,7 @@ export class MapBoard {
     canvas.addEventListener(
       'wheel',
       (event) => {
+        if (!this.navEnabled) return // 不吃事件，滾輪還給頁面捲動
         event.preventDefault()
         const factor = Math.exp(-event.deltaY * 0.0015)
         this.zoomAt(event.offsetX, event.offsetY, this.viewport.scale.x * factor)

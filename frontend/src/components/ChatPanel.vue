@@ -63,11 +63,14 @@ function timeOf(at) {
     </nav>
 
     <div ref="listEl" class="chat-list">
-      <div v-for="message in chat.filtered" :key="message.id" class="chat-msg" :class="message.kind">
+      <!-- kind- 前綴避免撞到 .chat／.sys 這類全域 class（曾被 .chat 的 300px 打中） -->
+      <div v-for="message in chat.filtered" :key="message.id" class="chat-msg" :class="'kind-' + message.kind">
         <template v-if="message.kind === 'chat'">
-          <span class="chat-time">{{ timeOf(message.at) }}</span>
-          <span class="chat-name" :class="{ self: message.from === room.selfId }">{{ message.name }}</span>
-          <span class="chat-text">{{ message.text }}</span>
+          <div class="chat-msg-head">
+            <span class="chat-time">{{ timeOf(message.at) }}</span>
+            <span class="chat-name" :class="{ self: message.from === room.selfId }">{{ message.name }}</span>
+          </div>
+          <div class="chat-text">{{ message.text }}</div>
         </template>
         <template v-else>
           <span class="chat-time">{{ timeOf(message.at) }}</span>

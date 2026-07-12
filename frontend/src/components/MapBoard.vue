@@ -81,6 +81,7 @@ function resetMapView() {
 onMounted(async () => {
   board = new MapBoard()
   await board.init(host.value)
+  board.setNav(settings.mapNav)
   redraw()
 })
 
@@ -89,6 +90,10 @@ onBeforeUnmount(() => board?.destroy())
 watch(() => room.game, redraw)
 watch(() => staticStore.loaded, redraw)
 watch(layout, redraw)
+watch(
+  () => settings.mapNav,
+  (enabled) => board?.setNav(enabled)
+)
 </script>
 
 <template>
@@ -103,7 +108,15 @@ watch(layout, redraw)
       >
         {{ settings.mapLayout === 'grid' ? '🌐 地理' : '⊞ 網格' }}
       </button>
-      <button class="btn ghost sm" title="回到全圖" @click="resetMapView">⤢ 全圖</button>
+      <button
+        class="btn ghost sm"
+        :class="{ 'nav-on': settings.mapNav }"
+        :title="settings.mapNav ? '鎖定地圖（回到全覽）' : '啟用拖曳平移與縮放'"
+        @click="settings.toggleMapNav()"
+      >
+        🔍 縮放{{ settings.mapNav ? '：開' : '：關' }}
+      </button>
+      <button v-if="settings.mapNav" class="btn ghost sm" title="回到全圖" @click="resetMapView">⤢ 全圖</button>
     </div>
 
     <div
