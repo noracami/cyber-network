@@ -154,8 +154,8 @@ const payoutRows = computed(() =>
             <li>費用 = <strong>進場費 ＋ 連線費</strong>。進場費依你是該城第幾個進駐者：<template v-for="(cost, index) in slotCosts" :key="index"><template v-if="index > 0">／</template>${{ cost }}</template>；連線費是「你的網路到該城」的最低過路費總和（Dijkstra），<strong>第一座城免連線費</strong>。</li>
             <li>城市的第 2、3 格分別要到 <strong>Step 2、Step 3</strong> 才開放；同一城不能重複進駐。</li>
             <li>只能建在啟用的叢集內（依人數啟用，地圖上未啟用區域反灰）。</li>
-            <li><strong>Step 2 觸發</strong>：有人達到觸發城數時，擴建階段結束即進入 Step 2，並移除現行市場最低卡。</li>
-            <li><strong>Step 3 卡</strong>被抽出時：公告、重洗剩餘牌庫，於當前階段結束後進入 Step 3。</li>
+            <li><strong>Step 2 觸發</strong>：有人蓋到觸發城數的<strong>當下立即</strong>進入 Step 2——市場最低卡立刻移出遊戲換新，且每城第二格馬上開放（同一擴建階段還沒行動的玩家立刻適用）。</li>
+            <li><strong>Step 3 卡</strong>被抽出時：以最大卡排入市場（不可競標）、重洗剩餘牌庫；<strong>當前階段結束後</strong>進入 Step 3——屆時移除 Step 3 卡與最低卡，市場縮為 6 張全部可競標。</li>
           </ul>
         </template>
 

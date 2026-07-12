@@ -504,11 +504,15 @@ a.btn {
 }
 
 .go-caption {
-  font-family: 'Orbitron', 'Noto Sans TC', sans-serif;
-  font-size: 0.7rem;
-  letter-spacing: 0.28em;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
   color: var(--cyan);
   margin-top: 8px;
+}
+
+.go-caption b {
+  font-family: var(--mono);
+  font-size: 1.05em;
 }
 
 .rank-badge {

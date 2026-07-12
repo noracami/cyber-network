@@ -5,6 +5,7 @@ import { useRoomStore } from '../stores/room'
 const room = useRoomStore()
 
 const ranking = computed(() => room.result?.ranking || [])
+const champion = computed(() => ranking.value[0] || null)
 </script>
 
 <template>
@@ -12,7 +13,9 @@ const ranking = computed(() => room.result?.ranking || [])
     <div v-if="room.result" class="go-hero">
       <div class="go-trophy">🏆</div>
       <div class="go-winner">{{ room.nameOf(room.result.winner) }}</div>
-      <div class="go-caption">GRID MASTER — 網域由此定名</div>
+      <div v-if="champion" class="go-caption">
+        供電 <b>{{ champion.powered }}</b> 節點奪下網域，收官 ${{ champion.credits }}
+      </div>
     </div>
     <h2 v-else>🏁 遊戲結束</h2>
 
