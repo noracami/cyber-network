@@ -14,6 +14,7 @@ defmodule GridMaster.Engine do
   @building_actions [:build, :build_done]
 
   defdelegate new(player_ids, opts), to: Setup
+  defdelegate rebuild_static(state), to: Setup
 
   @spec apply_action(State.t(), String.t(), {atom(), map()}) ::
           {:ok, State.t(), [tuple()]} | {:error, atom()}

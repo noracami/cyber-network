@@ -6,6 +6,10 @@ defmodule GridMaster.Room do
   生命週期：`:lobby` → `:in_game` → `:game_over` → `:lobby`（PRD §3.1）。
   斷線規則：大廳中已入座者離線超過 `seat_timeout`（預設 120 秒）自動離座；
   遊戲中斷線保留座位等重連。
+
+  持久化（PRD-v1.5 R1）：每次成功的狀態變更後把可持久欄位快照進
+  `GridMaster.Store`，進程重啟（部署）後自動還原、原地續局；
+  動作另記 append-only 日誌供重播。
   """
 
   use GenServer, restart: :transient
@@ -32,7 +36,10 @@ defmodule GridMaster.Room do
             timers: %{},
             seat_timeout: @default_seat_timeout,
             npc_timer: nil,
-            npc_delay: @default_npc_delay
+            npc_delay: @default_npc_delay,
+            store: GridMaster.Store,
+            game_id: nil,
+            action_seq: 0
 
   # ── Client API ──────────────────────────────────────────────
 
@@ -61,12 +68,58 @@ defmodule GridMaster.Room do
 
   @impl true
   def init(opts) do
-    {:ok,
-     %__MODULE__{
-       id: Keyword.fetch!(opts, :id),
-       seat_timeout: Keyword.get(opts, :seat_timeout, @default_seat_timeout),
-       npc_delay: Keyword.get(opts, :npc_delay, @default_npc_delay)
-     }}
+    s = %__MODULE__{
+      id: Keyword.fetch!(opts, :id),
+      seat_timeout: Keyword.get(opts, :seat_timeout, @default_seat_timeout),
+      npc_delay: Keyword.get(opts, :npc_delay, @default_npc_delay),
+      store:
+        Keyword.get(
+          opts,
+          :store,
+          Application.get_env(:grid_master, :room_store, GridMaster.Store)
+        )
+    }
+
+    case s.store.load(s.id) do
+      {:ok, saved} -> {:ok, restore(s, saved), {:continue, :restored}}
+      :none -> {:ok, s}
+    end
+  end
+
+  @impl true
+  def handle_continue(:restored, s) do
+    s =
+      case s.status do
+        # 牌局進行中：輪到 NPC 就繼續出手；真人斷線保留座位等重連（現行規則）
+        :in_game ->
+          schedule_npc(s)
+
+        # 大廳／終局畫面：還原後所有人視為離線，入座真人開始離座倒數
+        _lobby_or_game_over ->
+          Enum.reduce(s.seats, s, fn id, acc ->
+            if Npc.npc?(id), do: acc, else: start_timer(acc, id)
+          end)
+      end
+
+    {:noreply, s}
+  end
+
+  # 快照還原：runtime 欄位（連線／監視／計時器）歸零。未入座的真人只是
+  # 存檔當下剛好在線的旁觀者，直接清掉（斷線本來就會被 prune）。
+  defp restore(s, saved) do
+    bystanders = saved.users |> Map.keys() |> Enum.reject(&(&1 in saved.seats))
+
+    %{
+      s
+      | status: saved.status,
+        users: Map.drop(saved.users, bystanders),
+        seats: saved.seats,
+        chat: saved.chat,
+        engine: saved.engine,
+        result: saved.result,
+        game_id: saved.game_id,
+        action_seq: saved.action_seq
+    }
   end
 
   @impl true
@@ -89,7 +142,7 @@ defmodule GridMaster.Room do
     }
 
     s = cancel_timer(s, user.id)
-    {:reply, snapshot_view(s), broadcast_sync(s)}
+    {:reply, snapshot_view(s), s |> broadcast_sync() |> persist()}
   end
 
   def handle_call(:snapshot, _from, s), do: {:reply, snapshot_view(s), s}
@@ -98,7 +151,8 @@ defmodule GridMaster.Room do
     case do_lobby_op(op, user_id, s) do
       {:ok, s, messages} ->
         s = Enum.reduce(messages, s, &sysmsg(&2, &1))
-        {:reply, :ok, s |> broadcast_sync() |> schedule_npc()}
+        s = if op == :game_start, do: open_game(s), else: s
+        {:reply, :ok, s |> broadcast_sync() |> persist() |> schedule_npc()}
 
       {:error, reason} ->
         {:reply, {:error, reason}, s}
@@ -110,7 +164,8 @@ defmodule GridMaster.Room do
     text = if is_binary(text), do: String.trim(text), else: ""
 
     if user != nil and text != "" and String.length(text) <= 300 do
-      {:reply, :ok, push_chat(s, %{kind: "chat", from: user_id, name: user.name, text: text})}
+      s = s |> push_chat(%{kind: "chat", from: user_id, name: user.name, text: text}) |> persist()
+      {:reply, :ok, s}
     else
       {:reply, {:error, :invalid_message}, s}
     end
@@ -122,8 +177,7 @@ defmodule GridMaster.Room do
     else
       case Engine.apply_action(s.engine, user_id, {type, payload}) do
         {:ok, engine, events} ->
-          s = %{s | engine: engine} |> broadcast_events(events) |> maybe_finish()
-          {:reply, :ok, s |> broadcast_sync() |> schedule_npc()}
+          {:reply, :ok, commit_action(s, user_id, {type, payload}, engine, events)}
 
         {:error, reason} ->
           {:reply, {:error, reason}, s}
@@ -136,11 +190,25 @@ defmodule GridMaster.Room do
   def handle_call({:admin_abort, user_id}, _from, s) do
     cond do
       match?(%{role: "admin"}, s.users[user_id]) ->
-        s = s |> reset_to_lobby() |> sysmsg("管理員強制結束了遊戲，回到大廳") |> broadcast_sync()
+        s =
+          s
+          |> abort_game_record()
+          |> reset_to_lobby()
+          |> sysmsg("管理員強制結束了遊戲，回到大廳")
+          |> broadcast_sync()
+          |> persist()
+
         {:reply, :ok, s}
 
       s.status != :lobby and user_id in s.seats ->
-        s = s |> reset_to_lobby() |> sysmsg("#{name(s, user_id)} 結束了遊戲，回到大廳") |> broadcast_sync()
+        s =
+          s
+          |> abort_game_record()
+          |> reset_to_lobby()
+          |> sysmsg("#{name(s, user_id)} 結束了遊戲，回到大廳")
+          |> broadcast_sync()
+          |> persist()
+
         {:reply, :ok, s}
 
       true ->
@@ -158,7 +226,7 @@ defmodule GridMaster.Room do
         count = max(Map.get(s.connections, user_id, 1) - 1, 0)
         s = %{s | monitors: monitors, connections: Map.put(s.connections, user_id, count)}
         s = if count == 0, do: handle_offline(s, user_id), else: s
-        {:noreply, broadcast_sync(s)}
+        {:noreply, s |> broadcast_sync() |> persist()}
     end
   end
 
@@ -186,6 +254,7 @@ defmodule GridMaster.Room do
         |> prune_user(user_id)
         |> sysmsg("#{display} 離線逾時，已自動離座")
         |> broadcast_sync()
+        |> persist()
 
       {:noreply, s}
     else
@@ -234,8 +303,7 @@ defmodule GridMaster.Room do
             ready: true
           })
 
-        {:ok, %{s | users: users, seats: s.seats ++ [npc_id]},
-         ["#{Npc.display_name(n)} 加入了牌局"]}
+        {:ok, %{s | users: users, seats: s.seats ++ [npc_id]}, ["#{Npc.display_name(n)} 加入了牌局"]}
     end
   end
 
@@ -330,27 +398,69 @@ defmodule GridMaster.Room do
 
   defp npc_act(s, npc) do
     case try_npc_candidates(s.engine, npc, Npc.candidates(s.engine, npc)) do
-      {:ok, engine, events} ->
-        %{s | engine: engine}
-        |> broadcast_events(events)
-        |> maybe_finish()
-        |> broadcast_sync()
-        |> schedule_npc()
+      {:ok, action, engine, events} ->
+        commit_action(s, npc, action, engine, events)
 
       :error ->
         # 理論上到不了（候選清單以必成動作收尾）；保守停手避免空轉
-        s |> sysmsg("#{name(s, npc)} 卡住了，請結束遊戲重開") |> broadcast_sync()
+        s |> sysmsg("#{name(s, npc)} 卡住了，請結束遊戲重開") |> broadcast_sync() |> persist()
     end
   end
 
   defp try_npc_candidates(_engine, _npc, []), do: :error
 
-  defp try_npc_candidates(engine, npc, [{type, payload} | rest]) do
-    case Engine.apply_action(engine, npc, {type, payload}) do
-      {:ok, _engine, _events} = ok -> ok
+  defp try_npc_candidates(engine, npc, [action | rest]) do
+    case Engine.apply_action(engine, npc, action) do
+      {:ok, engine, events} -> {:ok, action, engine, events}
       {:error, _reason} -> try_npc_candidates(engine, npc, rest)
     end
   end
+
+  # ── 持久化（PRD-v1.5 R1）─────────────────────────────────────
+
+  # 成功動作的統一收尾（真人與 NPC 共用）：記動作日誌（round 為動作發生
+  # 當下的回合）→ 換引擎 → 廣播 → 判終局 → 落快照 → 排 NPC。
+  defp commit_action(s, actor, {type, payload}, engine, events) do
+    seq = s.action_seq + 1
+    s.store.record_action(s.game_id, seq, s.engine.round, actor, type, payload)
+
+    %{s | engine: engine, action_seq: seq}
+    |> broadcast_events(events)
+    |> maybe_finish()
+    |> broadcast_sync()
+    |> persist()
+    |> schedule_npc()
+  end
+
+  # 每次狀態變更後落快照。大廳且已無真人的房間直接刪快照（重啟後空房
+  # 不必復活）；main 例外——聊天歷史跨重啟保留。
+  defp persist(s) do
+    if s.status == :lobby and s.id != "main" and not any_human?(s) do
+      s.store.delete(s.id)
+    else
+      s.store.save(s)
+    end
+
+    s
+  end
+
+  defp any_human?(s), do: Enum.any?(s.users, fn {_id, u} -> u.role != "npc" end)
+
+  # 開局即建 games 對局列（initial_state 為重播起點）；DB 失敗不擋牌局
+  defp open_game(s) do
+    case s.store.create_game(s.id, s.engine) do
+      {:ok, game_id} -> %{s | game_id: game_id, action_seq: 0}
+      :error -> %{s | game_id: nil, action_seq: 0}
+    end
+  end
+
+  # 進行中就被結束的對局補 aborted_at（自然完局已在 maybe_finish 落款）
+  defp abort_game_record(%{status: :in_game} = s) do
+    s.store.abort_game(s.game_id)
+    s
+  end
+
+  defp abort_game_record(s), do: s
 
   # ── 內部輔助 ────────────────────────────────────────────────
 
@@ -421,6 +531,29 @@ defmodule GridMaster.Room do
   defp maybe_finish(%{engine: %{phase: :finished}} = s) do
     result = s.engine.winner
 
+    # 完局落款 games 對局表：名次陣列存當時顯示名與 NPC 標記
+    players =
+      result.ranking
+      |> Enum.with_index(1)
+      |> Enum.map(fn {row, rank} ->
+        %{
+          rank: rank,
+          id: row.player,
+          name: name(s, row.player),
+          npc: Npc.npc?(row.player),
+          powered: row.powered,
+          credits: row.credits,
+          cities: row.cities
+        }
+      end)
+
+    s.store.finish_game(s.game_id, %{
+      players: players,
+      winner_id: result.winner,
+      winner_name: name(s, result.winner),
+      rounds: s.engine.round
+    })
+
     %{s | status: :game_over, result: result}
     |> sysmsg("遊戲結束，#{name(s, result.winner)} 獲勝！")
   end
@@ -431,7 +564,17 @@ defmodule GridMaster.Room do
     # NPC 永遠準備好；真人重置為未準備
     users = Map.new(s.users, fn {id, u} -> {id, %{u | ready: u.role == "npc"}} end)
     if s.npc_timer, do: Process.cancel_timer(s.npc_timer)
-    s = %{s | status: :lobby, engine: nil, result: nil, users: users, npc_timer: nil}
+
+    s = %{
+      s
+      | status: :lobby,
+        engine: nil,
+        result: nil,
+        users: users,
+        npc_timer: nil,
+        game_id: nil,
+        action_seq: 0
+    }
 
     # 回到大廳時，離線中的入座者開始計時
     Enum.reduce(s.seats, s, fn id, acc ->
@@ -527,7 +670,8 @@ defmodule GridMaster.Room do
   defp push_chat(s, message) do
     message =
       Map.merge(message, %{
-        id: System.unique_integer([:positive, :monotonic]),
+        # 時間戳＋進程計數：跨重啟不碰撞（快照還原的舊訊息 id 不會與新訊息重複）
+        id: "#{System.os_time(:millisecond)}-#{System.unique_integer([:positive, :monotonic])}",
         at: DateTime.to_iso8601(DateTime.utc_now())
       })
 

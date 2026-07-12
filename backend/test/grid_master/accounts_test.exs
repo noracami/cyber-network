@@ -20,7 +20,10 @@ defmodule GridMaster.AccountsTest do
 
     test "帳號長度限制 3–20" do
       assert {:error, _short} = Accounts.register(%{username: "ab", password: "pass"})
-      assert {:error, _long} = Accounts.register(%{username: String.duplicate("a", 21), password: "pass"})
+
+      assert {:error, _long} =
+               Accounts.register(%{username: String.duplicate("a", 21), password: "pass"})
+
       assert {:ok, _min} = Accounts.register(%{username: "abc", password: "pass"})
     end
 

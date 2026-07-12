@@ -192,7 +192,13 @@ defmodule GridMaster.RoomTest do
       # OAuth 重導後以 Discord 身份重連，alias_of 指向原訪客
       Room.join(
         room,
-        %{id: "d_42", name: "DC客兒", role: "discord", avatar: "http://a/b.png", alias_of: "u_guest"},
+        %{
+          id: "d_42",
+          name: "DC客兒",
+          role: "discord",
+          avatar: "http://a/b.png",
+          alias_of: "u_guest"
+        },
         self()
       )
 
@@ -240,7 +246,13 @@ defmodule GridMaster.RoomTest do
 
     test "alias 不存在或相同時不動作" do
       room = start_room()
-      Room.join(room, %{id: "d_1", name: "DC", role: "discord", avatar: nil, alias_of: "u_nobody"}, self())
+
+      Room.join(
+        room,
+        %{id: "d_1", name: "DC", role: "discord", avatar: nil, alias_of: "u_nobody"},
+        self()
+      )
+
       assert Map.has_key?(Room.snapshot(room).users, "d_1")
     end
   end

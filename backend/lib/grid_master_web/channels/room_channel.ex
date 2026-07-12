@@ -37,6 +37,7 @@ defmodule GridMasterWeb.RoomChannel do
     {:ok, room} = Rooms.ensure(room_id)
     snapshot = Room.join(room, socket.assigns.user, self())
     send(self(), :after_join)
+
     # self：告訴客戶端自己的 user_id（token 雜湊導出，客戶端無法自行得知）
     {:ok, Map.put(snapshot, :self, socket.assigns.user.id), assign(socket, :room, room)}
   end

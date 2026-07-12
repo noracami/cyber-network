@@ -87,7 +87,13 @@ defmodule GridMasterWeb.UserSocket do
     token = params["token"]
 
     if is_binary(token) and byte_size(token) >= 8 do
-      user = %{id: user_id(token), name: sanitize_name(params["name"]), avatar: nil, role: role(token)}
+      user = %{
+        id: user_id(token),
+        name: sanitize_name(params["name"]),
+        avatar: nil,
+        role: role(token)
+      }
+
       {:ok, assign(socket, :user, user)}
     else
       :error

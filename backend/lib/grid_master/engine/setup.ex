@@ -77,6 +77,21 @@ defmodule GridMaster.Engine.Setup do
     {state, events}
   end
 
+  @doc """
+  還原持久化快照時重建 static——由 Data、人數與 active_regions 決定性導出，
+  所以快照不必攜帶這份唯讀數據（GridMaster.Store 序列化前會拆掉它）。
+  """
+  @spec rebuild_static(State.t()) :: State.t()
+  def rebuild_static(%State{} = state) do
+    rules = Data.rules()
+    config = Map.fetch!(rules["player_counts"], Integer.to_string(map_size(state.players)))
+
+    %{
+      state
+      | static: build_static(Data.map(), Data.deck(), rules, config, state.active_regions)
+    }
+  end
+
   defp build_static(map, deck_data, rules, config, active_regions) do
     city_region = Map.new(map["cities"], &{&1["id"], &1["region"]})
     active_city? = fn city -> MapSet.member?(active_regions, city_region[city]) end

@@ -17,7 +17,9 @@ defmodule GridMaster.Application do
       {Registry, keys: :unique, name: GridMaster.RoomRegistry},
       {DynamicSupervisor, name: GridMaster.RoomSupervisor, strategy: :one_for_one},
       # Start to serve requests, typically the last entry
-      GridMasterWeb.Endpoint
+      GridMasterWeb.Endpoint,
+      # 持久化管家：開機喚醒有快照的房間＋定時清掃（測試環境自行 :ignore）
+      GridMaster.Store.Janitor
     ]
 
     # See https://elixir.hexdocs.pm/Supervisor.html

@@ -23,6 +23,10 @@ config :grid_master, GridMasterWeb.Endpoint,
 # 測試環境降低 argon2 成本（雜湊本身不是被測物，別讓測試變慢）
 config :argon2_elixir, t_cost: 1, m_cost: 8
 
+# 房間測試不觸資料庫（sandbox 連線歸測試進程所有）；
+# 持久化測試以 store: GridMaster.Store 明確換回真實實作
+config :grid_master, room_store: GridMaster.Store.Null, room_janitor: false
+
 # Print only warnings and errors during test
 config :logger, level: :warning
 

@@ -33,6 +33,9 @@ config :phoenix, :json_library, Jason
 # Admin 身份 token（開發預設值；生產環境由 runtime.exs 以 ADMIN_TOKEN 環境變數覆蓋）
 config :grid_master, admin_token: "dev-admin-token"
 
+# 房間持久化（PRD-v1.5 R1）：測試環境換成 no-op Store 並停用管家
+config :grid_master, room_store: GridMaster.Store, room_janitor: true
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
