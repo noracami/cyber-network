@@ -42,9 +42,10 @@ async function submit() {
   }
 }
 
-/** @param {string} at */
+/** @param {string} at ISO 時間 → 使用者本地時區的 HH:MM */
 function timeOf(at) {
-  return at.slice(11, 16)
+  const d = new Date(at)
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 </script>
 

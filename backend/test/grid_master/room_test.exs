@@ -245,14 +245,15 @@ defmodule GridMaster.RoomTest do
     end
   end
 
-  describe "Admin 掀桌" do
-    test "admin 可強制回大廳並重置準備狀態，guest 不行" do
+  describe "結束遊戲（掀桌）" do
+    test "admin 與入座玩家可結束；旁觀者不行（2026-07-12 權力下放）" do
       room = start_room()
       Room.join(room, user("gm", "admin"), self())
+      Room.join(room, user("watcher"), self())
       join_seated(room, ["a", "b"])
       :ok = Room.lobby_op(room, :game_start, "a")
 
-      assert {:error, :forbidden} = Room.admin_abort(room, "a")
+      assert {:error, :forbidden} = Room.admin_abort(room, "watcher")
       assert :ok = Room.admin_abort(room, "gm")
 
       snapshot = Room.snapshot(room)

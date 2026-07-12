@@ -35,6 +35,7 @@ const ERROR_TEXT = {
   unreachable: '無法連通到這個節點',
   forbidden: '權限不足',
   login_required: '入座需要登入（Discord 或註冊帳號）',
+  no_npc: '沒有 NPC 可移除',
   timeout: '伺服器回應逾時',
 }
 
@@ -129,6 +130,12 @@ export const useRoomStore = defineStore('room', {
     },
     gameStart() {
       return this.op('game_start')
+    },
+    npcAdd() {
+      return this.op('npc_add')
+    },
+    npcRemove() {
+      return this.op('npc_remove')
     },
     backToLobby() {
       return this.op('back_to_lobby')

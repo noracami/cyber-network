@@ -12,6 +12,8 @@ const seatCards = computed(() => {
 })
 
 const isGuest = computed(() => !room.self || room.self.role === 'guest')
+const hasNpc = computed(() => room.seats.some((id) => room.users[id]?.role === 'npc'))
+const seatsLeft = computed(() => room.seats.length < MAX_SEATS)
 </script>
 
 <template>
@@ -53,6 +55,8 @@ const isGuest = computed(() => !room.self || room.self.role === 'guest')
         <button v-if="!room.self?.ready" class="btn primary" @click="room.ready()">準備</button>
         <button v-else class="btn ghost" @click="room.unready()">取消準備</button>
         <button class="btn ghost" @click="room.seatLeave()">離座</button>
+        <button v-if="seatsLeft" class="btn ghost" @click="room.npcAdd()">＋ NPC</button>
+        <button v-if="hasNpc" class="btn ghost" @click="room.npcRemove()">－ NPC</button>
         <button class="btn primary" :disabled="!room.allReady" @click="room.gameStart()">
           開始遊戲
         </button>

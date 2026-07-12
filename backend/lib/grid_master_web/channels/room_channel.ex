@@ -15,7 +15,9 @@ defmodule GridMasterWeb.RoomChannel do
     "ready" => :ready,
     "unready" => :unready,
     "game_start" => :game_start,
-    "back_to_lobby" => :back_to_lobby
+    "back_to_lobby" => :back_to_lobby,
+    "npc_add" => :npc_add,
+    "npc_remove" => :npc_remove
   }
 
   @game_actions %{

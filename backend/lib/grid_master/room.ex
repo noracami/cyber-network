@@ -12,10 +12,13 @@ defmodule GridMaster.Room do
 
   alias GridMaster.Engine
   alias GridMaster.Engine.View
+  alias GridMaster.Npc
 
   @max_seats 6
   @chat_limit 50
   @default_seat_timeout :timer.seconds(120)
+  # NPC 出手延遲（毫秒區間）：擬人節奏，測試可縮短
+  @default_npc_delay {900, 1800}
 
   defstruct id: nil,
             status: :lobby,
@@ -27,7 +30,9 @@ defmodule GridMaster.Room do
             connections: %{},
             monitors: %{},
             timers: %{},
-            seat_timeout: @default_seat_timeout
+            seat_timeout: @default_seat_timeout,
+            npc_timer: nil,
+            npc_delay: @default_npc_delay
 
   # ── Client API ──────────────────────────────────────────────
 
@@ -59,7 +64,8 @@ defmodule GridMaster.Room do
     {:ok,
      %__MODULE__{
        id: Keyword.fetch!(opts, :id),
-       seat_timeout: Keyword.get(opts, :seat_timeout, @default_seat_timeout)
+       seat_timeout: Keyword.get(opts, :seat_timeout, @default_seat_timeout),
+       npc_delay: Keyword.get(opts, :npc_delay, @default_npc_delay)
      }}
   end
 
@@ -92,7 +98,7 @@ defmodule GridMaster.Room do
     case do_lobby_op(op, user_id, s) do
       {:ok, s, messages} ->
         s = Enum.reduce(messages, s, &sysmsg(&2, &1))
-        {:reply, :ok, broadcast_sync(s)}
+        {:reply, :ok, s |> broadcast_sync() |> schedule_npc()}
 
       {:error, reason} ->
         {:reply, {:error, reason}, s}
@@ -117,7 +123,7 @@ defmodule GridMaster.Room do
       case Engine.apply_action(s.engine, user_id, {type, payload}) do
         {:ok, engine, events} ->
           s = %{s | engine: engine} |> broadcast_events(events) |> maybe_finish()
-          {:reply, :ok, broadcast_sync(s)}
+          {:reply, :ok, s |> broadcast_sync() |> schedule_npc()}
 
         {:error, reason} ->
           {:reply, {:error, reason}, s}
@@ -125,13 +131,19 @@ defmodule GridMaster.Room do
     end
   end
 
+  # 結束遊戲權限（2026-07-12 下放）：管理員之外，本局入座玩家也可結束——
+  # 單人配 NPC 遊玩時才有辦法自行收局。
   def handle_call({:admin_abort, user_id}, _from, s) do
-    case s.users[user_id] do
-      %{role: "admin"} ->
+    cond do
+      match?(%{role: "admin"}, s.users[user_id]) ->
         s = s |> reset_to_lobby() |> sysmsg("管理員強制結束了遊戲，回到大廳") |> broadcast_sync()
         {:reply, :ok, s}
 
-      _ ->
+      s.status != :lobby and user_id in s.seats ->
+        s = s |> reset_to_lobby() |> sysmsg("#{name(s, user_id)} 結束了遊戲，回到大廳") |> broadcast_sync()
+        {:reply, :ok, s}
+
+      true ->
         {:reply, {:error, :forbidden}, s}
     end
   end
@@ -147,6 +159,17 @@ defmodule GridMaster.Room do
         s = %{s | monitors: monitors, connections: Map.put(s.connections, user_id, count)}
         s = if count == 0, do: handle_offline(s, user_id), else: s
         {:noreply, broadcast_sync(s)}
+    end
+  end
+
+  def handle_info(:npc_tick, s) do
+    s = %{s | npc_timer: nil}
+
+    with :in_game <- s.status,
+         npc when npc != nil <- Npc.pending(s.engine, npc_ids(s)) do
+      {:noreply, npc_act(s, npc)}
+    else
+      _not_npc_turn -> {:noreply, s}
     end
   end
 
@@ -181,6 +204,50 @@ defmodule GridMaster.Room do
       user_id in s.seats -> {:error, :already_seated}
       length(s.seats) >= @max_seats -> {:error, :room_full}
       true -> {:ok, %{s | seats: s.seats ++ [user_id]}, ["#{name(s, user_id)} 入座"]}
+    end
+  end
+
+  defp do_lobby_op(:npc_add, user_id, s) do
+    cond do
+      s.status != :lobby ->
+        {:error, :not_in_lobby}
+
+      s.users[user_id] == nil ->
+        {:error, :unknown_user}
+
+      # NPC 操作與入座同門檻：登入使用者限定
+      s.users[user_id].role == "guest" ->
+        {:error, :login_required}
+
+      length(s.seats) >= @max_seats ->
+        {:error, :room_full}
+
+      true ->
+        n = Enum.find(1..@max_seats, &(Npc.id(&1) not in s.seats))
+        npc_id = Npc.id(n)
+
+        users =
+          Map.put(s.users, npc_id, %{
+            name: Npc.display_name(n),
+            role: "npc",
+            avatar: nil,
+            ready: true
+          })
+
+        {:ok, %{s | users: users, seats: s.seats ++ [npc_id]},
+         ["#{Npc.display_name(n)} 加入了牌局"]}
+    end
+  end
+
+  defp do_lobby_op(:npc_remove, user_id, s) do
+    npc_id = s.seats |> Enum.filter(&Npc.npc?/1) |> List.last()
+
+    cond do
+      s.status != :lobby -> {:error, :not_in_lobby}
+      s.users[user_id] == nil -> {:error, :unknown_user}
+      s.users[user_id].role == "guest" -> {:error, :login_required}
+      npc_id == nil -> {:error, :no_npc}
+      true -> {:ok, s |> unseat(npc_id) |> prune_user(npc_id), ["#{name(s, npc_id)} 已移除"]}
     end
   end
 
@@ -239,6 +306,49 @@ defmodule GridMaster.Room do
       true ->
         users = Map.update!(s.users, user_id, &%{&1 | ready: ready?})
         {:ok, %{s | users: users}, []}
+    end
+  end
+
+  # ── NPC 驅動 ────────────────────────────────────────────────
+
+  defp npc_ids(s), do: Enum.filter(s.seats, &Npc.npc?/1)
+
+  # 遊戲中且輪到 NPC → 排一次延遲出手（已排過就不重複）
+  defp schedule_npc(%{status: :in_game, npc_timer: nil} = s) do
+    npcs = npc_ids(s)
+
+    if npcs != [] and Npc.pending(s.engine, npcs) != nil do
+      {min_delay, max_delay} = s.npc_delay
+      ref = Process.send_after(self(), :npc_tick, Enum.random(min_delay..max_delay))
+      %{s | npc_timer: ref}
+    else
+      s
+    end
+  end
+
+  defp schedule_npc(s), do: s
+
+  defp npc_act(s, npc) do
+    case try_npc_candidates(s.engine, npc, Npc.candidates(s.engine, npc)) do
+      {:ok, engine, events} ->
+        %{s | engine: engine}
+        |> broadcast_events(events)
+        |> maybe_finish()
+        |> broadcast_sync()
+        |> schedule_npc()
+
+      :error ->
+        # 理論上到不了（候選清單以必成動作收尾）；保守停手避免空轉
+        s |> sysmsg("#{name(s, npc)} 卡住了，請結束遊戲重開") |> broadcast_sync()
+    end
+  end
+
+  defp try_npc_candidates(_engine, _npc, []), do: :error
+
+  defp try_npc_candidates(engine, npc, [{type, payload} | rest]) do
+    case Engine.apply_action(engine, npc, {type, payload}) do
+      {:ok, _engine, _events} = ok -> ok
+      {:error, _reason} -> try_npc_candidates(engine, npc, rest)
     end
   end
 
@@ -318,8 +428,10 @@ defmodule GridMaster.Room do
   defp maybe_finish(s), do: s
 
   defp reset_to_lobby(s) do
-    users = Map.new(s.users, fn {id, u} -> {id, %{u | ready: false}} end)
-    s = %{s | status: :lobby, engine: nil, result: nil, users: users}
+    # NPC 永遠準備好；真人重置為未準備
+    users = Map.new(s.users, fn {id, u} -> {id, %{u | ready: u.role == "npc"}} end)
+    if s.npc_timer, do: Process.cancel_timer(s.npc_timer)
+    s = %{s | status: :lobby, engine: nil, result: nil, users: users, npc_timer: nil}
 
     # 回到大廳時，離線中的入座者開始計時
     Enum.reduce(s.seats, s, fn id, acc ->
@@ -388,7 +500,7 @@ defmodule GridMaster.Room do
              role: u.role,
              avatar: Map.get(u, :avatar),
              ready: u.ready,
-             online: Map.get(s.connections, id, 0) > 0,
+             online: u.role == "npc" or Map.get(s.connections, id, 0) > 0,
              seated: id in s.seats
            }}
         end),

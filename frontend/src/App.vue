@@ -90,11 +90,11 @@ function logoutPassword() {
         </template>
 
         <button
-          v-if="room.isAdmin && room.status !== 'lobby'"
+          v-if="(room.isAdmin || room.seated) && room.status !== 'lobby'"
           class="btn danger"
           @click="room.adminAbort()"
         >
-          掀桌
+          {{ room.isAdmin ? '掀桌' : '結束遊戲' }}
         </button>
       </div>
     </header>
