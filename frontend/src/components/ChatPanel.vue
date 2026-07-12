@@ -1,5 +1,5 @@
 <script setup>
-import { nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useChatStore } from '../stores/chat'
 import { useRoomStore } from '../stores/room'
 
@@ -9,6 +9,17 @@ const room = useRoomStore()
 const draft = ref('')
 const listEl = ref(/** @type {HTMLElement | null} */ (null))
 
+// 手機（R3）：聊天預設收合成標題列，收合期間累計未讀
+const isMobile = window.matchMedia('(max-width: 700px)').matches
+const open = ref(!isMobile)
+const seenCount = ref(0)
+const unread = computed(() => Math.max(0, chat.messages.length - seenCount.value))
+
+function toggle() {
+  open.value = !open.value
+  if (open.value) seenCount.value = chat.messages.length
+}
+
 const TABS = [
   { key: 'all', label: 'All' },
   { key: 'chat', label: 'Chat' },
@@ -17,7 +28,8 @@ const TABS = [
 
 watch(
   () => chat.messages.length,
-  async () => {
+  async (count) => {
+    if (open.value) seenCount.value = count
     await nextTick()
     if (listEl.value) listEl.value.scrollTop = listEl.value.scrollHeight
   }
@@ -50,8 +62,13 @@ function timeOf(at) {
 </script>
 
 <template>
-  <aside class="chat">
-    <nav class="chat-tabs">
+  <aside class="chat" :class="{ collapsed: isMobile && !open }">
+    <button v-if="isMobile" class="collapse-head" @click="toggle">
+      <span>💬 聊天<span v-if="unread && !open" class="chat-unread">{{ unread }}</span></span>
+      <span class="collapse-arrow">{{ open ? '▾' : '▸' }}</span>
+    </button>
+
+    <nav v-show="!isMobile || open" class="chat-tabs">
       <button
         v-for="tab in TABS"
         :key="tab.key"
@@ -63,7 +80,7 @@ function timeOf(at) {
       </button>
     </nav>
 
-    <div ref="listEl" class="chat-list">
+    <div v-show="!isMobile || open" ref="listEl" class="chat-list">
       <!-- kind- 前綴避免撞到 .chat／.sys 這類全域 class（曾被 .chat 的 300px 打中） -->
       <div v-for="message in chat.filtered" :key="message.id" class="chat-msg" :class="'kind-' + message.kind">
         <template v-if="message.kind === 'chat'">
@@ -80,7 +97,7 @@ function timeOf(at) {
       </div>
     </div>
 
-    <div class="chat-input">
+    <div v-show="!isMobile || open" class="chat-input">
       <input
         v-model="draft"
         type="text"

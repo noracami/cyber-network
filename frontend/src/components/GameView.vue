@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useRoomStore } from '../stores/room'
 import { useStaticStore } from '../stores/staticData'
 import ActionDock from './ActionDock.vue'
+import CollapseSection from './CollapseSection.vue'
 import GameLog from './GameLog.vue'
 import MapBoard from './MapBoard.vue'
 import MarketPanel from './MarketPanel.vue'
@@ -25,10 +26,17 @@ const plantMarketInDock = computed(() => room.game?.phase === 'auction')
     <PhaseBanner />
     <ActionDock />
     <MapBoard />
+    <!-- 手機（R3）：市場／日誌收合成標題列，桌機不變 -->
     <div class="panel-row">
-      <MarketPanel v-if="!plantMarketInDock" />
-      <ResourceMarket v-if="!marketInDock" />
-      <GameLog />
+      <CollapseSection v-if="!plantMarketInDock" title="🏭 設施市場">
+        <MarketPanel />
+      </CollapseSection>
+      <CollapseSection v-if="!marketInDock" title="⛽ 資源市場">
+        <ResourceMarket />
+      </CollapseSection>
+      <CollapseSection title="📜 事件紀錄">
+        <GameLog />
+      </CollapseSection>
     </div>
   </div>
 </template>

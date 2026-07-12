@@ -17,6 +17,13 @@ function ensureToken() {
   return token
 }
 
+/** 地圖縮放預設：桌機關（鎖定全覽）、觸控裝置開（R3——手機全覽太小，捏合縮放是剛需） */
+function defaultMapNav() {
+  const saved = localStorage.getItem(MAP_NAV_KEY)
+  if (saved != null) return saved === 'on'
+  return window.matchMedia('(pointer: coarse)').matches
+}
+
 export const useSettingsStore = defineStore('settings', {
   state: () => ({
     token: ensureToken(),
@@ -27,8 +34,8 @@ export const useSettingsStore = defineStore('settings', {
     passwordToken: localStorage.getItem(PASSWORD_KEY) || '',
     /** 地圖佈局：'grid' 垂直水平線路（預設）｜'geo' 地理位置 */
     mapLayout: localStorage.getItem(MAP_LAYOUT_KEY) === 'geo' ? 'geo' : 'grid',
-    /** 地圖縮放平移：預設關閉（鎖定全覽），使用者可開 */
-    mapNav: localStorage.getItem(MAP_NAV_KEY) === 'on',
+    /** 地圖縮放平移：使用者切過就記住，否則依裝置預設 */
+    mapNav: defaultMapNav(),
   }),
   actions: {
     /** @param {string} name */
