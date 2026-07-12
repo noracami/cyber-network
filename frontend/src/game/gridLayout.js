@@ -4,7 +4,7 @@
 // 佈局是純顯示層，遊戲邏輯（Dijkstra／過路費）仍走原始圖數據，不受影響。
 const COLS = 16
 const ROWS = 10
-const LANE_STEP = 0.08 // 相鄰車道間距（格單位）≈ 14px 世界座標
+const LANE_STEP = 0.12 // 相鄰車道間距（格單位）≈ 21px 世界座標（線寬 10px 下仍有明顯空隙）
 const LANE_MARGIN = LANE_STEP * 1.5 // 分派車道時的安全邊距：涵蓋轉角過衝，端點相碰也算衝突
 
 const key = (col, row) => `${col},${row}`
@@ -127,7 +127,7 @@ function routeEdges(map, cells, occupied) {
   })
 
   // 節點阻擋：線段「穿過」節點（端點停在節點上的不算）時，
-  // 保留中央七條車道（±0.24 格），逼它偏到 ±0.32 格 ≈ 57px，
+  // 保留中央七條車道，逼它偏到 ±4×LANE_STEP ≈ 85px，
   // 繞出網格模式的節點圓（半徑 44px ≈ 0.25 格）之外
   /** @type {Map<string, {at: number, from: number, to: number}[]>} */
   const blockers = new Map()

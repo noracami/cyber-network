@@ -181,8 +181,8 @@ export class MapBoard {
     // 網格模式間距寬裕（~178px），節點與線都放大一階；
     // 地理模式受最擠城市對（72px）限制，維持較小尺寸
     const S = layout
-      ? { r: 44, edgeW: 5, pipR: 8, pipGap: 18, nameSize: 18, nameY: 52, costSize: 15 }
-      : { r: 24, edgeW: 4, pipR: 5, pipGap: 11, nameSize: 16, nameY: 28, costSize: 14 }
+      ? { r: 44, edgeW: 10, pipR: 8, pipGap: 18, nameSize: 18, nameY: 52, costSize: 20 }
+      : { r: 24, edgeW: 8, pipR: 5, pipGap: 11, nameSize: 16, nameY: 28, costSize: 18 }
 
     const cityById = new Map(map.cities.map((c) => [c.id, c]))
     const regionColor = new Map(map.regions.map((r) => [r.id, r.color]))

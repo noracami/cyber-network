@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import { useRoomStore } from '../stores/room'
 import { useStaticStore } from '../stores/staticData'
 import ActionDock from './ActionDock.vue'
 import GameLog from './GameLog.vue'
@@ -9,8 +10,11 @@ import PhaseBanner from './PhaseBanner.vue'
 import PlayerStrip from './PlayerStrip.vue'
 import ResourceMarket from './ResourceMarket.vue'
 
+const room = useRoomStore()
 const staticStore = useStaticStore()
 const ready = computed(() => staticStore.loaded)
+// 採購階段時資源市場移進操作面板（v1.2），這裡不重複顯示
+const marketInDock = computed(() => room.game?.phase === 'resources')
 </script>
 
 <template>
@@ -24,7 +28,7 @@ const ready = computed(() => staticStore.loaded)
     <PlayerStrip />
     <div class="panel-row">
       <MarketPanel />
-      <ResourceMarket />
+      <ResourceMarket v-if="!marketInDock" />
       <GameLog />
     </div>
   </div>

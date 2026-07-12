@@ -1,7 +1,8 @@
 # ⚡ 《Grid Master: Cyber Network》第一版開發規格說明書 (PRD)
 
 > v1.0 已於 2026-07-12 上線（https://gridmaster.miao-bao.cc）。首輪實測回饋整理成
-> [PRD-v1.1.md](PRD-v1.1.md)（地圖體驗、資訊透明化、規則彈窗、帳密登入）。
+> [PRD-v1.1.md](PRD-v1.1.md)（地圖體驗、資訊透明化、規則彈窗、帳密登入），
+> 第二輪見 [PRD-v1.2.md](PRD-v1.2.md)（呈現層強化：凹槽儲存、採購預覽）。
 
 ## 1. 專案範疇與 MVP 目標
 

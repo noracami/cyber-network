@@ -7,6 +7,7 @@ import { useRoomStore } from '../stores/room'
 import { useStaticStore } from '../stores/staticData'
 import { useUiStore } from '../stores/ui'
 import PlantCard from './PlantCard.vue'
+import ResourceMarket from './ResourceMarket.vue'
 
 const room = useRoomStore()
 const staticStore = useStaticStore()
@@ -144,8 +145,9 @@ function submitPower() {
       <p v-else class="hint">你本回合的競標已結束。</p>
     </template>
 
-    <!-- 採購資源階段 -->
+    <!-- 採購資源階段：資源市場移進採購區塊（v1.2），調整數量即時預覽買走哪些格位 -->
     <template v-else-if="game.phase === 'resources'">
+      <ResourceMarket embedded :pending="myResourceTurn ? qty : null" />
       <div v-if="myResourceTurn" class="dock-section">
         <h3>採購資源（反序輪到你）</h3>
         <div class="dock-row resource-steppers">

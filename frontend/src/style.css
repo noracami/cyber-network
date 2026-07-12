@@ -665,12 +665,13 @@ a.btn {
   flex-wrap: wrap;
 }
 
+/* v1.2：玩家數值卡整體放大一倍 */
 .player-chip {
   background: var(--bg-panel);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 8px 12px;
-  min-width: 170px;
+  border-radius: 12px;
+  padding: 14px 18px;
+  min-width: 300px;
 }
 
 .player-chip.self {
@@ -680,32 +681,63 @@ a.btn {
 .pc-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
-  font-size: 0.85rem;
+  font-size: 1.15rem;
+  padding: 2px 0;
 }
 
 .pc-dot {
-  width: 10px;
-  height: 10px;
+  width: 15px;
+  height: 15px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
 .mini-plant,
 .mini-res {
-  font-size: 0.75rem;
+  font-size: 1rem;
 }
 
 button.mini-plant {
   font: inherit;
-  font-size: 0.75rem;
-  padding: 1px 6px;
-  border-radius: 5px;
+  font-size: 1rem;
+  padding: 2px 9px;
+  border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--bg-raised);
   color: var(--text);
   cursor: pointer;
+}
+
+/* v1.2：儲存資源凹槽——凹槽數＝容量、格內符號＝持有 */
+.storage-row {
+  gap: 4px;
+}
+
+.storage-label {
+  font-size: 0.85rem;
+  width: 2.4em;
+  flex-shrink: 0;
+}
+
+.res-slot {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.45);
+}
+
+.res-slot.filled {
+  border-style: solid;
+  box-shadow: none;
+  background: var(--bg-raised);
 }
 
 button.mini-plant:hover {
@@ -863,6 +895,27 @@ button.mini-plant:hover {
   background: var(--cyan);
   border-color: var(--cyan);
   box-shadow: 0 0 4px var(--cyan-dim);
+}
+
+/* 採購預覽（v1.2）：這些格位即將被買走 */
+.rm-slot.taking {
+  background: #fbbf24;
+  border-color: #fbbf24;
+  box-shadow: 0 0 6px rgba(251, 191, 36, 0.5);
+}
+
+.rm-taking-label {
+  color: #fbbf24;
+  font-family: var(--mono);
+  font-weight: 700;
+}
+
+.resource-market.embedded {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
 }
 
 .rm-price {

@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import { capsOf } from '../game/capacity'
 import { RESOURCE_META, seatColor, TYPE_META } from '../game/text'
 import { useRoomStore } from '../stores/room'
 import { useUiStore } from '../stores/ui'
@@ -14,9 +15,46 @@ const players = computed(() => {
     id,
     name: room.nameOf(id),
     color: seatColor(room.seats, id),
+    storage: storageRows(game.players[id]),
     ...game.players[id],
   }))
 })
+
+/**
+ * 儲存凹槽模型（v1.2）：凹槽數＝容量、格內符號＝持有的資源。
+ * 專屬容量一列一類型；混合容量另列，裝水力／火力超出專屬容量的溢出
+ * （與引擎的總量驗證等價，見 engine-design §6.3）。
+ * @returns {{key: string, label: string, slots: (string|null)[]}[]}
+ */
+function storageRows(player) {
+  const caps = capsOf(player.plants)
+  const res = player.resources
+  const rows = []
+
+  for (const type of ['hydro', 'thermal', 'waste', 'quantum']) {
+    if (caps[type] === 0) continue
+    const filled = Math.min(res[type], caps[type])
+    rows.push({
+      key: type,
+      label: RESOURCE_META[type].icon,
+      slots: Array.from({ length: caps[type] }, (_, i) => (i < filled ? RESOURCE_META[type].icon : null)),
+    })
+  }
+
+  if (caps.hybrid > 0) {
+    const overflow = [
+      ...Array(Math.max(0, res.hydro - caps.hydro)).fill(RESOURCE_META.hydro.icon),
+      ...Array(Math.max(0, res.thermal - caps.thermal)).fill(RESOURCE_META.thermal.icon),
+    ]
+    rows.push({
+      key: 'hybrid',
+      label: '💧🔥',
+      slots: Array.from({ length: caps.hybrid }, (_, i) => overflow[i] || null),
+    })
+  }
+
+  return rows
+}
 </script>
 
 <template>
@@ -46,12 +84,14 @@ const players = computed(() => {
           <template v-else>#{{ plant.number }}{{ TYPE_META[plant.type]?.icon }}</template>
         </button>
       </div>
-      <div class="pc-row hint">
-        <template v-for="(meta, resource) in RESOURCE_META" :key="resource">
-          <span v-if="player.resources[resource] > 0" class="mini-res">
-            {{ meta.icon }}{{ player.resources[resource] }}
-          </span>
-        </template>
+      <div v-for="row in player.storage" :key="row.key" class="pc-row storage-row">
+        <span class="storage-label">{{ row.label }}</span>
+        <span
+          v-for="(slot, index) in row.slots"
+          :key="index"
+          class="res-slot"
+          :class="{ filled: slot }"
+        >{{ slot || '' }}</span>
       </div>
     </div>
   </div>
