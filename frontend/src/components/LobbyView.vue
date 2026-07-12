@@ -57,7 +57,7 @@ const isGuest = computed(() => !room.self || room.self.role === 'guest')
           開始遊戲
         </button>
       </template>
-      <p v-else-if="isGuest" class="hint">用 Discord 登入即可入座；旁觀和聊天不需要登入。</p>
+      <p v-else-if="isGuest" class="hint">登入（Discord 或註冊帳號）即可入座；旁觀和聊天不需要登入。</p>
       <p v-else class="hint">點「入座」加入牌局；不入座也可以旁觀和聊天。</p>
     </div>
 

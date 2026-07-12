@@ -42,4 +42,5 @@ EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=15s \
   CMD curl -fsS http://localhost:4000/api/activity >/dev/null || exit 1
 
-CMD ["bin/grid_master", "start"]
+# 先跑 DB migration 再起服務（M10 起有 accounts 表；migration 冪等）
+CMD ["sh", "-c", "bin/grid_master eval 'GridMaster.Release.migrate' && exec bin/grid_master start"]

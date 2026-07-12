@@ -56,6 +56,35 @@ defmodule GridMasterWeb.UserSocketTest do
     assert :error = connect(UserSocket, %{"discord_token" => "garbage"})
   end
 
+  test "有效 password_token → 帳密身份（id 前綴 p_、role user，可入座）" do
+    token = Phoenix.Token.sign(@endpoint, "password_auth", %{id: 42, name: "Neo"})
+    {:ok, socket} = connect(UserSocket, %{"password_token" => token})
+
+    assert socket.assigns.user.id == "p_42"
+    assert socket.assigns.user.name == "Neo"
+    assert socket.assigns.user.role == "user"
+    assert socket.assigns.user.avatar == nil
+  end
+
+  test "password_token 也支援訪客 alias_of 合併" do
+    {:ok, guest_socket} = connect(UserSocket, %{"token" => "pw-guest-token", "name" => "訪客"})
+    token = Phoenix.Token.sign(@endpoint, "password_auth", %{id: 7, name: "Sub7"})
+
+    {:ok, socket} = connect(UserSocket, %{"password_token" => token, "token" => "pw-guest-token"})
+    assert socket.assigns.user.alias_of == guest_socket.assigns.user.id
+  end
+
+  test "壞掉的 password_token → 退回訪客身份" do
+    {:ok, socket} =
+      connect(UserSocket, %{
+        "password_token" => "garbage",
+        "token" => "pw-fallback-token",
+        "name" => "備援"
+      })
+
+    assert socket.assigns.user.role == "guest"
+  end
+
   test "ADMIN_DISCORD_IDS 內的帳號取得 admin 身份" do
     Application.put_env(:grid_master, :admin_discord_ids, ["909090"])
     on_exit(fn -> Application.put_env(:grid_master, :admin_discord_ids, []) end)

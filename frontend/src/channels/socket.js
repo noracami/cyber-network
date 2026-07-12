@@ -28,8 +28,9 @@ export function connect() {
     params: {
       token: settings.token,
       name: settings.name || '訪客',
-      // 有 Discord 登入 token 就帶上；後端驗簽成功即用 Discord 身份，失敗退回訪客
+      // 有登入 token 就帶上；後端優先驗 Discord、再驗帳密，都失敗退回訪客
       ...(settings.discordToken ? { discord_token: settings.discordToken } : {}),
+      ...(settings.passwordToken ? { password_token: settings.passwordToken } : {}),
     },
   })
   socket.onOpen(() => {

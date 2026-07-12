@@ -112,17 +112,20 @@ transform 要掛在重繪不會重置的外層容器上。
 **定位**：輕量帳號系統——**無 email、無驗證信、無密碼找回**；UI 上明示「測試
 用帳號，請勿使用你在其他服務的密碼」。
 
+**規則定案（2026-07-12）**：帳號**純英數 3–20 字**（不用 email、禁符號）；
+密碼**至少 4 字**；rate limit **先不做**。
+
 **後端**（Postgres 首次真正啟用——當初保留 Ecto 的用途）：
 - `accounts` 資料表：`id`、`username`（唯一、不分大小寫）、`password_hash`、
   `inserted_at`。密碼以 **argon2**（`argon2_elixir`）雜湊，明文不落地不留 log。
-- `POST /api/auth/register` `{username, password}`：username 3–20 字、密碼至少
-  8 字；成功即視同登入。
+- `POST /api/auth/register` `{username, password}`：依上述定案驗證；
+  成功即視同登入。
 - `POST /api/auth/login`：驗證後回傳 **Phoenix.Token**（新 salt
   `"password_auth"`、30 天效期，與 Discord token 同模式）＋顯示名。
 - `UserSocket` 接受此 token → 身份 `p_<account_id>`、role `user`，與 Discord
   使用者同權（可入座）；壞 token 退回訪客，沿用現行行為。
 - 保留現有 `alias_of` 訪客合併機制（訪客旁觀中→登入→身份無縫接手）。
-- （可選）註冊 rate limit：每 IP 每分鐘 N 次的簡單 plug，防手殘灌帳號。
+- ~~（可選）註冊 rate limit~~（2026-07-12 定案：先不做）。
 
 **PRD 條文修訂**：
 - §3.2 入座門檻：「僅 Discord User 與 Admin 可入座」→「僅**已登入使用者**

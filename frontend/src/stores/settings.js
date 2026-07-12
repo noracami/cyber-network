@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 const TOKEN_KEY = 'gm_token'
 const NAME_KEY = 'gm_name'
 const DISCORD_KEY = 'gm_discord_token'
+const PASSWORD_KEY = 'gm_password_token'
 const MAP_LAYOUT_KEY = 'gm_map_layout'
 
 /** 確保 localStorage 有一組隨機 token——它就是玩家身份（斷線重連的鑰匙）。 */
@@ -21,6 +22,8 @@ export const useSettingsStore = defineStore('settings', {
     name: localStorage.getItem(NAME_KEY) || '',
     /** Discord 登入 token（後端簽發，30 天有效） */
     discordToken: localStorage.getItem(DISCORD_KEY) || '',
+    /** 帳密登入 token（M10；同為後端簽發、30 天有效） */
+    passwordToken: localStorage.getItem(PASSWORD_KEY) || '',
     /** 地圖佈局：'geo' 地理位置｜'grid' 垂直水平線路 */
     mapLayout: localStorage.getItem(MAP_LAYOUT_KEY) === 'grid' ? 'grid' : 'geo',
   }),
@@ -38,6 +41,15 @@ export const useSettingsStore = defineStore('settings', {
     clearDiscordToken() {
       this.discordToken = ''
       localStorage.removeItem(DISCORD_KEY)
+    },
+    /** @param {string} token */
+    setPasswordToken(token) {
+      this.passwordToken = token
+      localStorage.setItem(PASSWORD_KEY, token)
+    },
+    clearPasswordToken() {
+      this.passwordToken = ''
+      localStorage.removeItem(PASSWORD_KEY)
     },
     toggleMapLayout() {
       this.mapLayout = this.mapLayout === 'grid' ? 'geo' : 'grid'

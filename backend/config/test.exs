@@ -20,6 +20,9 @@ config :grid_master, GridMasterWeb.Endpoint,
   secret_key_base: "Zt/G/QWmKgPEhG7aLI6PyW8bcxZBmVf47KbJqod9V0lbGNdF04vbezrhYZle3+vt",
   server: false
 
+# 測試環境降低 argon2 成本（雜湊本身不是被測物，別讓測試變慢）
+config :argon2_elixir, t_cost: 1, m_cost: 8
+
 # Print only warnings and errors during test
 config :logger, level: :warning
 

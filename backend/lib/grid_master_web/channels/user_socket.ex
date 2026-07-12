@@ -1,22 +1,22 @@
 defmodule GridMasterWeb.UserSocket do
   @moduledoc """
-  WebSocket 入口。MVP 身份：客戶端持有隨機 token（localStorage），
-  user_id 由 token 雜湊導出——同 token 重連即同身份（斷線重連的基礎）。
-  token 等於 `:admin_token` 設定值者取得 admin 身份；M6 再接 Discord OAuth。
+  WebSocket 入口。身份來源依序：Discord token（`d_<id>`）→ 帳密 token
+  （`p_<id>`，M10）→ 訪客（localStorage 隨機 token 雜湊為 `u_<hash>`，
+  同 token 重連即同身份）。token 等於 `:admin_token` 設定值者取得 admin 身份。
   """
 
   use Phoenix.Socket
 
   channel "room:*", GridMasterWeb.RoomChannel
 
-  # Discord 登入 token 有效期（30 天；過期自動退回訪客身份，前端會清除）
-  @discord_token_max_age 30 * 24 * 3600
+  # 登入 token 有效期（30 天；過期自動退回訪客身份，前端會清除）
+  @auth_token_max_age 30 * 24 * 3600
 
   @impl true
   def connect(params, socket, _connect_info) do
-    case discord_user(params["discord_token"]) do
+    case auth_user(params) do
       {:ok, user} ->
-        # alias_of：同瀏覽器的訪客身份。Room 會把訪客的座位合併給 Discord 身份，
+        # alias_of：同瀏覽器的訪客身份。Room 會把訪客的座位合併給登入身份，
         # 避免「登入後舊訪客殘影還佔著位子」。
         user = Map.put(user, :alias_of, guest_alias(params["token"]))
         {:ok, assign(socket, :user, user)}
@@ -26,12 +26,19 @@ defmodule GridMasterWeb.UserSocket do
     end
   end
 
+  defp auth_user(params) do
+    with :error <- discord_user(params["discord_token"]),
+         :error <- password_user(params["password_token"]) do
+      :error
+    end
+  end
+
   defp guest_alias(token) when is_binary(token) and byte_size(token) >= 8, do: user_id(token)
   defp guest_alias(_token), do: nil
 
   defp discord_user(token) when is_binary(token) do
     case Phoenix.Token.verify(GridMasterWeb.Endpoint, "discord_auth", token,
-           max_age: @discord_token_max_age
+           max_age: @auth_token_max_age
          ) do
       {:ok, %{id: discord_id, name: name, avatar: avatar}} ->
         {:ok,
@@ -48,6 +55,27 @@ defmodule GridMasterWeb.UserSocket do
   end
 
   defp discord_user(_missing), do: :error
+
+  # 帳密登入（M10）：AccountController 簽發的 token
+  defp password_user(token) when is_binary(token) do
+    case Phoenix.Token.verify(GridMasterWeb.Endpoint, "password_auth", token,
+           max_age: @auth_token_max_age
+         ) do
+      {:ok, %{id: account_id, name: name}} ->
+        {:ok,
+         %{
+           id: "p_" <> Integer.to_string(account_id),
+           name: sanitize_name(name),
+           avatar: nil,
+           role: "user"
+         }}
+
+      _invalid ->
+        :error
+    end
+  end
+
+  defp password_user(_missing), do: :error
 
   # ADMIN_DISCORD_IDS：逗號分隔的 Discord ID 清單，生產環境的 admin 授權方式
   defp discord_role(discord_id) do

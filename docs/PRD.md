@@ -68,13 +68,13 @@ $$\text{等待開始遊戲 (Lobby)} \longrightarrow \text{遊戲中 (In-Game)} \
 
 ### 3.2 身份與角色解耦
 
-* **全域身份**：`Guest`（未登入訪客）、`Discord User`（已登入使用者）、`Admin`（管理員，開發期提供專屬 API/UI 可任意手動調整連線者的身份）。
+* **全域身份**：`Guest`（未登入訪客）、`Discord User`（Discord 登入）、`User`（帳密註冊帳號，v1.1 新增的測試用輕量帳號）、`Admin`（管理員，開發期提供專屬 API/UI 可任意手動調整連線者的身份）。
 * **遊戲角色**：`Player`（已入座玩家，上限 6 人）、`Spectator`（旁觀者）。
-* **入座門檻（2026-07-12 定案）**：僅 `Discord User` 與 `Admin` 可入座成為 Player；`Guest` 只能旁觀與聊天。
+* **入座門檻（2026-07-12 定案，v1.1 修訂）**：僅**已登入使用者**（Discord 或註冊帳號）與 `Admin` 可入座成為 Player；`Guest` 只能旁觀與聊天。
 
 ### 3.3 核心功能矩陣
 
-* **斷線重連**：【要】透過 Discord ID 進行 Session 綁定，重整網頁或網路抖動時自動恢復原有座位與個人遊戲盤面。
+* **斷線重連**：【要】透過登入身份 ID（Discord ID 或帳號 ID）進行 Session 綁定，重整網頁或網路抖動時自動恢復原有座位與個人遊戲盤面。
 * **斷線逾時清理**：【要】等待階段若 Player 離線超過 $120$ 秒，系統自動取消其準備狀態並強制離座變回 Spectator。
 * **聊天室歷史紀錄**：【要】分頁標籤包含 `All` / `Chat` / `Sysmsg`。後端 GenServer 記憶體內快取最近 $50$ 則訊息，供重連者讀取。
 * **Admin 掀桌鍵**：【要】提供全域 `ABORT_GAME` API，Admin 可隨時強制清空進行中的遊戲盤面，退回 Lobby 狀態。

@@ -6,6 +6,7 @@ import DemoToolbar from './components/DemoToolbar.vue'
 import GameOverView from './components/GameOverView.vue'
 import GameView from './components/GameView.vue'
 import LobbyView from './components/LobbyView.vue'
+import LoginModal from './components/LoginModal.vue'
 import PlantDetailModal from './components/PlantDetailModal.vue'
 import RulesModal from './components/RulesModal.vue'
 import { enterDemo, isDemo } from './demo/demo'
@@ -55,6 +56,11 @@ function logoutDiscord() {
   settings.clearDiscordToken()
   reconnect()
 }
+
+function logoutPassword() {
+  settings.clearPasswordToken()
+  reconnect()
+}
 </script>
 
 <template>
@@ -70,10 +76,15 @@ function logoutDiscord() {
           <span class="self-name">{{ room.self?.name }}</span>
           <button class="btn ghost" @click="logoutDiscord">登出</button>
         </template>
+        <template v-else-if="settings.passwordToken">
+          <span class="self-name">{{ room.self?.name }}</span>
+          <button class="btn ghost" @click="logoutPassword">登出</button>
+        </template>
         <template v-else>
           <button class="btn ghost" @click="changeName">
             {{ room.self?.name || settings.name || '設定暱稱' }}
           </button>
+          <button class="btn ghost" @click="ui.openLogin()">登入 / 註冊</button>
           <a class="btn primary" href="/auth/discord">Discord 登入</a>
         </template>
 
@@ -103,6 +114,7 @@ function logoutDiscord() {
 
     <RulesModal />
     <PlantDetailModal />
+    <LoginModal />
 
     <footer class="disclaimer">
       非商業粉絲致敬作品，遊戲機制致敬《Power Grid》（Friedemann Friese／2F-Spiele／Rio Grande

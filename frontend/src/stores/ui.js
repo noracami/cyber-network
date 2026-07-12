@@ -9,6 +9,8 @@ export const useUiStore = defineStore('ui', {
     payoutHighlight: null,
     /** @type {number | null} 電廠詳情彈窗的卡號 */
     detailPlant: null,
+    /** 帳密登入／註冊彈窗 */
+    loginOpen: false,
   }),
 
   actions: {
@@ -30,6 +32,12 @@ export const useUiStore = defineStore('ui', {
     },
     closePlant() {
       this.detailPlant = null
+    },
+    openLogin() {
+      this.loginOpen = true
+    },
+    closeLogin() {
+      this.loginOpen = false
     },
   },
 })
