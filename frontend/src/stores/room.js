@@ -36,6 +36,7 @@ const ERROR_TEXT = {
   forbidden: '權限不足',
   login_required: '入座需要登入（Discord 或註冊帳號）',
   no_npc: '沒有 NPC 可移除',
+  invalid_room: '房號格式不正確',
   timeout: '伺服器回應逾時',
 }
 
@@ -44,6 +45,8 @@ export const useRoomStore = defineStore('room', {
     /** ?demo 展示模式：所有對後端的操作被攔截（見 demo/demo.js） */
     demoMode: false,
     connected: false,
+    /** 目前所在房號（hash 路由 #/r/<id>，無 hash = main） */
+    roomId: 'main',
     /** @type {string | null} */
     selfId: null,
     /** @type {'lobby' | 'in_game' | 'game_over'} */
@@ -92,6 +95,18 @@ export const useRoomStore = defineStore('room', {
   },
 
   actions: {
+    /** 切房：房間狀態歸零，等新房間的 join 快照（聊天由 chat.reset 接手） */
+    enterRoom(roomId) {
+      this.roomId = roomId
+      this.status = 'lobby'
+      this.seats = []
+      this.users = {}
+      this.game = null
+      this.result = null
+      this.lastEvents = []
+      this.eventLog = []
+      this.eventSeq = 0
+    },
     /** room_sync 廣播（全量狀態） */
     applySync(payload) {
       this.status = payload.status

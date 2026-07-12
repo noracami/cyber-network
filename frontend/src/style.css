@@ -91,6 +91,90 @@ code {
   flex-wrap: wrap;
 }
 
+/* ── 分房房號 chip 與房間列表（R2 多房間） ── */
+
+.room-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.room-code {
+  font-family: var(--mono);
+  color: var(--cyan);
+  letter-spacing: 0.06em;
+}
+
+.room-list-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.room-list-head h3 {
+  margin: 0;
+  flex: 1;
+}
+
+.room-list-items {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.room-item {
+  font: inherit;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.room-item:hover {
+  border-color: var(--cyan);
+  background: var(--cyan-dim);
+}
+
+.room-status {
+  font-size: 0.78em;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.room-status.is-in_game {
+  color: var(--cyan);
+  border-color: var(--cyan);
+}
+
+.room-status.is-lobby {
+  color: var(--green);
+  border-color: var(--green);
+}
+
+.room-count {
+  margin-left: auto;
+  color: var(--text-dim);
+  font-size: 0.82em;
+  white-space: nowrap;
+}
+
 .conn-dot {
   width: 9px;
   height: 9px;

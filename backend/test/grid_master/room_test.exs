@@ -257,6 +257,28 @@ defmodule GridMaster.RoomTest do
     end
   end
 
+  describe "閒置回收（R2）" do
+    test "無連線閒置逾時進程自動關閉；有人連著就不關" do
+      room = start_room(idle_timeout: 200)
+      ref = Process.monitor(room)
+
+      conn = spawn(fn -> receive(do: (:bye -> :ok)) end)
+      Room.join(room, user("a"), conn)
+
+      # 有連線：撐過一個閒置週期不關
+      refute_receive {:DOWN, ^ref, :process, _pid, _reason}, 300
+
+      send(conn, :bye)
+      assert_receive {:DOWN, ^ref, :process, _pid, :normal}, 1000
+    end
+
+    test "從未有人加入的房間也會閒置關閉" do
+      room = start_room(idle_timeout: 100)
+      ref = Process.monitor(room)
+      assert_receive {:DOWN, ^ref, :process, _pid, :normal}, 1000
+    end
+  end
+
   describe "結束遊戲（掀桌）" do
     test "admin 與入座玩家可結束；旁觀者不行（2026-07-12 權力下放）" do
       room = start_room()

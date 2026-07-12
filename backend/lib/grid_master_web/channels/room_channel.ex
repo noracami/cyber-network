@@ -34,13 +34,22 @@ defmodule GridMasterWeb.RoomChannel do
 
   @impl true
   def join("room:" <> room_id, _params, socket) do
-    {:ok, room} = Rooms.ensure(room_id)
-    snapshot = Room.join(room, socket.assigns.user, self())
-    send(self(), :after_join)
+    if valid_room_id?(room_id) do
+      {:ok, room} = Rooms.ensure(room_id)
+      snapshot = Room.join(room, socket.assigns.user, self())
+      send(self(), :after_join)
 
-    # self：告訴客戶端自己的 user_id（token 雜湊導出，客戶端無法自行得知）
-    {:ok, Map.put(snapshot, :self, socket.assigns.user.id), assign(socket, :room, room)}
+      # self：告訴客戶端自己的 user_id（token 雜湊導出，客戶端無法自行得知）
+      {:ok, Map.put(snapshot, :self, socket.assigns.user.id), assign(socket, :room, room)}
+    else
+      {:error, %{reason: "invalid_room"}}
+    end
   end
+
+  # 房號白名單（PRD-v1.5 R2）：main 或 4–6 字元小寫英數，
+  # 擋任意字串垃圾房（前端產生房號時另排除易混淆字元 0/o/1/l）
+  defp valid_room_id?("main"), do: true
+  defp valid_room_id?(room_id), do: room_id =~ ~r/^[a-z0-9]{4,6}$/
 
   @impl true
   def handle_info(:after_join, socket) do

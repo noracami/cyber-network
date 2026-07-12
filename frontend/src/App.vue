@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { connect, reconnect } from './channels/socket'
 import ChatPanel from './components/ChatPanel.vue'
 import DemoToolbar from './components/DemoToolbar.vue'
@@ -9,6 +9,7 @@ import LobbyView from './components/LobbyView.vue'
 import LoginModal from './components/LoginModal.vue'
 import PlantDetailModal from './components/PlantDetailModal.vue'
 import PlayerStrip from './components/PlayerStrip.vue'
+import RoomListPanel from './components/RoomListPanel.vue'
 import RulesModal from './components/RulesModal.vue'
 import { enterDemo, isDemo } from './demo/demo'
 import { useRoomStore } from './stores/room'
@@ -62,12 +63,38 @@ function logoutPassword() {
   settings.clearPasswordToken()
   reconnect()
 }
+
+const linkCopied = ref(false)
+
+async function copyRoomLink() {
+  const url = `${location.origin}${location.pathname}#/r/${room.roomId}`
+  try {
+    await navigator.clipboard.writeText(url)
+    linkCopied.value = true
+    setTimeout(() => {
+      linkCopied.value = false
+    }, 1500)
+  } catch {
+    window.prompt('複製這條房間連結', url)
+  }
+}
+
+function backToMain() {
+  location.hash = ''
+}
 </script>
 
 <template>
   <div class="app">
     <header class="topbar">
       <h1>⚡ Grid Master <span class="sub">CYBER NETWORK</span></h1>
+      <div v-if="room.roomId !== 'main'" class="room-chip">
+        <span class="room-code">#{{ room.roomId }}</span>
+        <button class="btn ghost" @click="copyRoomLink()">
+          {{ linkCopied ? '✔ 已複製' : '📋 複製連結' }}
+        </button>
+        <button class="btn ghost" @click="backToMain()">回大廳</button>
+      </div>
       <div class="user-box">
         <button class="btn ghost" @click="ui.openRules()">📖 規則</button>
         <span class="conn-dot" :class="room.connected ? 'on' : 'off'" :title="room.connected ? '已連線' : '連線中斷'"></span>
@@ -112,6 +139,7 @@ function logoutPassword() {
       </section>
       <aside class="right-col">
         <PlayerStrip v-if="room.status === 'in_game'" />
+        <RoomListPanel v-if="!demo && room.roomId === 'main' && room.status === 'lobby'" />
         <ChatPanel />
       </aside>
     </main>

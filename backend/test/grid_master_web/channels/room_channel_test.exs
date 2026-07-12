@@ -26,7 +26,9 @@ defmodule GridMasterWeb.RoomChannelTest do
     {snapshot, socket}
   end
 
-  defp new_room_id, do: "ct#{System.unique_integer([:positive])}"
+  # 房號需通過白名單（^[a-z0-9]{4,6}$）：固定 6 字元
+  defp new_room_id,
+    do: "r" <> String.pad_leading("#{rem(System.unique_integer([:positive]), 100_000)}", 5, "0")
 
   test "token 太短拒絕連線；缺 token 拒絕連線" do
     assert :error = connect(UserSocket, %{"token" => "abc"})
@@ -40,6 +42,17 @@ defmodule GridMasterWeb.RoomChannelTest do
 
     socket_c = connect_user("other-token-9876", "小華")
     refute socket_a.assigns.user.id == socket_c.assigns.user.id
+  end
+
+  test "房號白名單：main 與 4–6 字元小寫英數之外一律拒絕" do
+    socket = connect_user("guest-token-0001", "小明")
+
+    for bad <- ["ab", "toolong7", "ABCD", "a-b3d", "房間一"] do
+      assert {:error, %{reason: "invalid_room"}} =
+               subscribe_and_join(socket, "room:" <> bad)
+    end
+
+    assert {:ok, _snapshot, _socket} = subscribe_and_join(socket, "room:main")
   end
 
   test "join 回傳大廳快照、聊天歷史與自己的身份" do

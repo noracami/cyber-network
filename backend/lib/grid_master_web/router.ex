@@ -14,6 +14,7 @@ defmodule GridMasterWeb.Router do
 
     get "/static", StaticDataController, :show
     get "/activity", ActivityController, :show
+    get "/rooms", RoomController, :index
 
     post "/auth/register", AccountController, :register
     post "/auth/login", AccountController, :login

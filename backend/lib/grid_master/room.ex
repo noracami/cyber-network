@@ -10,6 +10,10 @@ defmodule GridMaster.Room do
   持久化（PRD-v1.5 R1）：每次成功的狀態變更後把可持久欄位快照進
   `GridMaster.Store`，進程重啟（部署）後自動還原、原地續局；
   動作另記 append-only 日誌供重播。
+
+  閒置回收（PRD-v1.5 R2）：無連線超過 `idle_timeout`（預設 10 分鐘）
+  進程自動關閉——快照仍在，有人回來 `Rooms.ensure` 自動復活；
+  非 in_game 的分房關閉時連快照一併刪除，main 永遠可復活。
   """
 
   use GenServer, restart: :transient
@@ -23,6 +27,8 @@ defmodule GridMaster.Room do
   @default_seat_timeout :timer.seconds(120)
   # NPC 出手延遲（毫秒區間）：擬人節奏，測試可縮短
   @default_npc_delay {900, 1800}
+  # 無連線閒置多久自動關閉進程（快照仍在，有人回來 ensure 自動復活）
+  @default_idle_timeout :timer.minutes(10)
 
   defstruct id: nil,
             status: :lobby,
@@ -37,6 +43,8 @@ defmodule GridMaster.Room do
             seat_timeout: @default_seat_timeout,
             npc_timer: nil,
             npc_delay: @default_npc_delay,
+            idle_timer: nil,
+            idle_timeout: @default_idle_timeout,
             store: GridMaster.Store,
             game_id: nil,
             action_seq: 0
@@ -72,6 +80,7 @@ defmodule GridMaster.Room do
       id: Keyword.fetch!(opts, :id),
       seat_timeout: Keyword.get(opts, :seat_timeout, @default_seat_timeout),
       npc_delay: Keyword.get(opts, :npc_delay, @default_npc_delay),
+      idle_timeout: Keyword.get(opts, :idle_timeout, @default_idle_timeout),
       store:
         Keyword.get(
           opts,
@@ -82,7 +91,7 @@ defmodule GridMaster.Room do
 
     case s.store.load(s.id) do
       {:ok, saved} -> {:ok, restore(s, saved), {:continue, :restored}}
-      :none -> {:ok, s}
+      :none -> {:ok, start_idle(s)}
     end
   end
 
@@ -101,7 +110,8 @@ defmodule GridMaster.Room do
           end)
       end
 
-    {:noreply, s}
+    # 剛還原時必然無連線（開機喚醒或有人 ensure 中）：起閒置倒數
+    {:noreply, start_idle(s)}
   end
 
   # 快照還原：runtime 欄位（連線／監視／計時器）歸零。未入座的真人只是
@@ -141,7 +151,7 @@ defmodule GridMaster.Room do
           )
     }
 
-    s = cancel_timer(s, user.id)
+    s = s |> cancel_timer(user.id) |> cancel_idle()
     {:reply, snapshot_view(s), s |> broadcast_sync() |> persist()}
   end
 
@@ -226,7 +236,21 @@ defmodule GridMaster.Room do
         count = max(Map.get(s.connections, user_id, 1) - 1, 0)
         s = %{s | monitors: monitors, connections: Map.put(s.connections, user_id, count)}
         s = if count == 0, do: handle_offline(s, user_id), else: s
+        s = if total_connections(s) == 0, do: start_idle(s), else: s
         {:noreply, s |> broadcast_sync() |> persist()}
+    end
+  end
+
+  # 閒置到點：仍無連線就關閉進程。非 in_game 的分房連快照一併刪除；
+  # main 與進行中牌局留著快照，有人回來 ensure 自動復活原地續局。
+  def handle_info(:idle_shutdown, s) do
+    s = %{s | idle_timer: nil}
+
+    if total_connections(s) == 0 do
+      if s.id != "main" and s.status != :in_game, do: s.store.delete(s.id)
+      {:stop, :normal, s}
+    else
+      {:noreply, s}
     end
   end
 
@@ -602,6 +626,20 @@ defmodule GridMaster.Room do
           connections: Map.delete(s.connections, user_id)
       }
     end
+  end
+
+  defp total_connections(s), do: s.connections |> Map.values() |> Enum.sum()
+
+  defp start_idle(s) do
+    s = cancel_idle(s)
+    %{s | idle_timer: Process.send_after(self(), :idle_shutdown, s.idle_timeout)}
+  end
+
+  defp cancel_idle(%{idle_timer: nil} = s), do: s
+
+  defp cancel_idle(s) do
+    Process.cancel_timer(s.idle_timer)
+    %{s | idle_timer: nil}
   end
 
   defp start_timer(s, user_id) do

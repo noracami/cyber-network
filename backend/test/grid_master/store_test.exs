@@ -212,6 +212,56 @@ defmodule GridMaster.StoreTest do
     assert saved.game_id == nil
   end
 
+  test "閒置關閉：非 in_game 分房連快照一併刪除" do
+    id = fresh_id()
+    room = start_room(id, idle_timeout: 150, seat_timeout: 60_000)
+    ref = Process.monitor(room)
+
+    conn = spawn(fn -> receive(do: (:bye -> :ok)) end)
+    Room.join(room, user("a"), conn)
+    :ok = Room.lobby_op(room, :seat_take, "a")
+    assert %RoomSnapshot{} = Repo.get(RoomSnapshot, id)
+
+    # 入座者斷線（座位保留倒數 60s），但閒置先到點 → 關進程、刪快照
+    send(conn, :bye)
+    assert_receive {:DOWN, ^ref, :process, _pid, :normal}, 2000
+    assert Repo.get(RoomSnapshot, id) == nil
+  end
+
+  test "閒置關閉：in_game 房保留快照，有人回來自動復活續局" do
+    id = fresh_id()
+    room = start_room(id, idle_timeout: 150)
+    ref = Process.monitor(room)
+
+    conn = spawn(fn -> receive(do: (:bye -> :ok)) end)
+    Room.join(room, user("a"), conn)
+    :ok = Room.lobby_op(room, :seat_take, "a")
+    :ok = Room.lobby_op(room, :npc_add, "a")
+    :ok = Room.lobby_op(room, :ready, "a")
+    :ok = Room.lobby_op(room, :game_start, "a")
+
+    send(conn, :bye)
+    assert_receive {:DOWN, ^ref, :process, _pid, :normal}, 2000
+    assert %RoomSnapshot{} = Repo.get(RoomSnapshot, id)
+
+    room2 = start_room(id)
+    assert :sys.get_state(room2).status == :in_game
+  end
+
+  test "閒置關閉：main 保留快照" do
+    stop_existing_room("main")
+    room = start_room("main", idle_timeout: 150)
+    ref = Process.monitor(room)
+
+    conn = spawn(fn -> receive(do: (:bye -> :ok)) end)
+    Room.join(room, user("a"), conn)
+    :ok = Room.chat(room, "a", "閒置前留言")
+    send(conn, :bye)
+
+    assert_receive {:DOWN, ^ref, :process, _pid, :normal}, 2000
+    assert %RoomSnapshot{} = Repo.get(RoomSnapshot, "main")
+  end
+
   test "sweep 清掃逾時快照，main 例外" do
     stale_at = DateTime.add(DateTime.utc_now(), -25, :hour)
 

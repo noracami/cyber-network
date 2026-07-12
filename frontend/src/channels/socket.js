@@ -7,6 +7,16 @@ import { useSettingsStore } from '../stores/settings'
 let socket = null
 /** @type {import('phoenix').Channel | null} */
 let channel = null
+/** @type {(() => void) | null} */
+let hashHandler = null
+
+/** 房號 hash 路由（PRD-v1.5 R2）：#/r/<id> ↔ room:<id>，無 hash = main */
+const ROOM_HASH = /^#\/r\/([a-z0-9]{4,6})$/
+
+export function roomIdFromHash() {
+  const match = location.hash.match(ROOM_HASH)
+  return match ? match[1] : 'main'
+}
 
 function wsUrl() {
   if (import.meta.env.VITE_WS_URL) return import.meta.env.VITE_WS_URL
@@ -15,11 +25,10 @@ function wsUrl() {
   return location.origin.replace(/^http/, 'ws') + '/socket'
 }
 
-/** 建立 WebSocket 連線並加入 room:main。Phoenix Socket 會自動斷線重連＋重新 join。 */
+/** 建立 WebSocket 連線並加入 hash 指定的房間。Phoenix Socket 會自動斷線重連＋重新 join。 */
 export function connect() {
   const settings = useSettingsStore()
   const room = useRoomStore()
-  const chat = useChatStore()
 
   // 展示模式不連線——真實 room_sync 會蓋掉假資料
   if (room.demoMode) return
@@ -44,7 +53,26 @@ export function connect() {
   })
   socket.connect()
 
-  channel = socket.channel('room:main', {})
+  joinRoom(roomIdFromHash())
+
+  if (!hashHandler) {
+    hashHandler = () => {
+      const id = roomIdFromHash()
+      if (id !== useRoomStore().roomId) joinRoom(id)
+    }
+    window.addEventListener('hashchange', hashHandler)
+  }
+}
+
+/** 切房＝leave 舊 channel＋join 新 channel（同一條 socket），房間狀態歸零等新快照。 */
+function joinRoom(roomId) {
+  const room = useRoomStore()
+  const chat = useChatStore()
+
+  if (channel) channel.leave()
+  room.enterRoom(roomId)
+
+  channel = socket.channel(`room:${roomId}`, {})
   channel.on('room_sync', (payload) => room.applySync(payload))
   channel.on('game_events', (payload) => room.applyEvents(payload.events))
   channel.on('chat_new', (message) => chat.add(message))
@@ -55,7 +83,13 @@ export function connect() {
       room.applySnapshot(snapshot)
       chat.reset(snapshot.chat)
     })
-    .receive('error', () => room.flashError('加入房間失敗'))
+    .receive('error', (resp) => {
+      room.flashError(resp?.reason === 'invalid_room' ? 'invalid_room' : '加入房間失敗')
+      // 房號不合法就退回 main
+      if (resp?.reason === 'invalid_room' && roomId !== 'main') {
+        location.hash = ''
+      }
+    })
 }
 
 /** 改名等需要重建連線參數的場合使用。 */
