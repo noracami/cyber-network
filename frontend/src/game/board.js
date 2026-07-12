@@ -2,6 +2,7 @@
 // M9：固定世界座標 1600×1000＋手刻 pan/zoom——鏡頭掛在 viewport 容器上，
 // state 更新只全量重繪 root、不碰鏡頭，兩者互不干擾。
 import { Application, Container, Graphics, Text } from 'pixi.js'
+import { mulberry32 } from './rng'
 
 // 世界尺寸由數據反推：最擠的城市對（new_york↔philadelphia，3.61 單位）
 // 在此尺寸下間距 ~72px，大於節點直徑 48px——放大到底也不會疊
@@ -15,6 +16,7 @@ export class MapBoard {
     /** @type {Application | null} */
     this.app = null
     this.viewport = null
+    this.bgLayer = null
     this.root = null
     this.props = null
     /** @type {Map<number, {x: number, y: number, sx: number, sy: number}>} */
@@ -38,15 +40,47 @@ export class MapBoard {
     await this.app.init({ backgroundAlpha: 0, resizeTo: host, antialias: true })
     host.appendChild(this.app.canvas)
     this.viewport = new Container()
+    this.bgLayer = new Container()
     this.root = new Container()
-    this.viewport.addChild(this.root)
+    this.viewport.addChild(this.bgLayer, this.root)
     this.app.stage.addChild(this.viewport)
+    this.drawBackground()
     this.bindNavigation()
     this.app.renderer.on('resize', () => {
       this.fitView()
       this.redraw()
     })
     this.fitView()
+  }
+
+  /** 電路板紋理背景（固定 seed，只畫一次；跟著鏡頭縮放平移） */
+  drawBackground() {
+    const g = new Graphics()
+    const rand = mulberry32(1337)
+
+    // 低對比格點
+    for (let x = PAD; x <= WORLD.w - PAD; x += 100) {
+      for (let y = PAD; y <= WORLD.h - PAD; y += 100) {
+        g.circle(x, y, 1.6).fill({ color: 0x37e6d4, alpha: 0.05 })
+      }
+    }
+
+    // 稀疏走線＋端點 via
+    for (let i = 0; i < 26; i++) {
+      let x = rand() * WORLD.w
+      let y = rand() * WORLD.h
+      g.moveTo(x, y)
+      const steps = 2 + Math.floor(rand() * 3)
+      for (let s = 0; s < steps; s++) {
+        if (rand() < 0.5) x = Math.max(0, Math.min(WORLD.w, x + (rand() - 0.5) * 700))
+        else y = Math.max(0, Math.min(WORLD.h, y + (rand() - 0.5) * 500))
+        g.lineTo(x, y)
+      }
+      g.stroke({ width: 2, color: rand() < 0.3 ? 0x9d6bff : 0x37e6d4, alpha: 0.05 })
+      g.circle(x, y, 3).fill({ color: 0x37e6d4, alpha: 0.07 })
+    }
+
+    this.bgLayer.addChild(g)
   }
 
   update(props) {
@@ -193,8 +227,8 @@ export class MapBoard {
     // 網格模式間距寬裕（~178px），節點與線都放大一階；
     // 地理模式受最擠城市對（72px）限制，維持較小尺寸
     const S = layout
-      ? { r: 44, edgeW: 10, pipR: 8, pipGap: 18, nameSize: 18, nameY: 52, costSize: 20 }
-      : { r: 24, edgeW: 8, pipR: 5, pipGap: 11, nameSize: 16, nameY: 28, costSize: 18 }
+      ? { r: 44, edgeW: 10, nameSize: 18, nameY: 52, costSize: 20 }
+      : { r: 24, edgeW: 8, nameSize: 16, nameY: 28, costSize: 18 }
 
     const cityById = new Map(map.cities.map((c) => [c.id, c]))
     const regionColor = new Map(map.regions.map((r) => [r.id, r.color]))
@@ -218,14 +252,24 @@ export class MapBoard {
           }))
         : [ca.pos, cb.pos].map((p) => ({ x: sx(p.x), y: sy(p.y) }))
 
+      // 走線質感：底線＋較亮的細芯線
       const line = new Graphics()
       line.moveTo(points[0].x, points[0].y)
       for (const point of points.slice(1)) line.lineTo(point.x, point.y)
       line.stroke({ width: S.edgeW, color: 0x263054, alpha: dim ? 0.2 : 1, join: 'round' })
-      edgeLayer.addChild(line)
+      const core = new Graphics()
+      core.moveTo(points[0].x, points[0].y)
+      for (const point of points.slice(1)) core.lineTo(point.x, point.y)
+      core.stroke({
+        width: Math.max(1.5, S.edgeW * 0.28),
+        color: 0x4a5a8f,
+        alpha: dim ? 0.12 : 0.85,
+        join: 'round',
+      })
+      edgeLayer.addChild(line, core)
 
       if (!dim) {
-        // 過路費標在最長線段的中點
+        // 過路費標在最長線段的中點，配半透明底板
         let best = null
         for (let i = 1; i < points.length; i++) {
           const len = Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y)
@@ -239,41 +283,85 @@ export class MapBoard {
         }
         const label = new Text({
           text: String(cost),
-          style: { fontSize: S.costSize, fill: 0x6b7699 },
+          style: { fontSize: S.costSize, fill: 0x8a95bd },
           resolution: 2,
         })
         label.anchor.set(0.5)
         label.position.set(best.x, best.y)
-        edgeLayer.addChild(label)
+        const plate = new Graphics()
+        plate
+          .roundRect(best.x - label.width / 2 - 5, best.y - label.height / 2 - 2, label.width + 10, label.height + 4, 4)
+          .fill({ color: 0x0b0e17, alpha: 0.78 })
+        edgeLayer.addChild(plate, label)
       }
     })
 
-    // 城市節點
+    // 城市節點：切角晶片章＋針腳＋插槽燈（插槽數＝當前 Step 開放的進駐位）
+    const chipPath = (g, r, c) => {
+      g.moveTo(-r + c, -r)
+        .lineTo(r - c, -r)
+        .lineTo(r, -r + c)
+        .lineTo(r, r - c)
+        .lineTo(r - c, r)
+        .lineTo(-r + c, r)
+        .lineTo(-r, r - c)
+        .lineTo(-r, -r + c)
+        .closePath()
+    }
+
     for (const city of map.cities) {
       const isActive = active.has(city.region)
       const owners = game.city_owners[city.id] || []
       const cost = isActive ? buildableCost(city.id) : null
+      const rColor = regionColor.get(city.region)
 
       const node = new Container()
       node.position.set(sx(posOf(city).x), sy(posOf(city).y))
       node.alpha = isActive ? 1 : 0.15
 
-      const circle = new Graphics()
-      circle
-        .circle(0, 0, S.r)
-        .fill(0x121627)
-        .circle(0, 0, S.r)
-        .stroke({
-          width: cost != null ? S.edgeW : S.edgeW * 0.6,
-          color: cost != null ? 0x37e6d4 : regionColor.get(city.region),
-        })
-      node.addChild(circle)
-
-      owners.forEach((ownerId, index) => {
-        const pip = new Graphics()
-        pip.circle(-S.pipGap + index * S.pipGap, 0, S.pipR).fill(colorOf(ownerId))
-        node.addChild(pip)
+      const chamfer = S.r * 0.38
+      const g = new Graphics()
+      if (cost != null) {
+        // 可建目標：外圈微光暈
+        chipPath(g, S.r + S.r * 0.16, chamfer * 1.16)
+        g.stroke({ width: S.r * 0.09, color: 0x37e6d4, alpha: 0.3 })
+      }
+      chipPath(g, S.r, chamfer)
+      g.fill(0x121627)
+      chipPath(g, S.r, chamfer)
+      g.stroke({
+        width: cost != null ? S.r * 0.1 : S.r * 0.06,
+        color: cost != null ? 0x37e6d4 : rColor,
       })
+      // 針腳（四邊各二）
+      const pin = S.r * 0.16
+      for (const off of [-S.r * 0.42, S.r * 0.42]) {
+        g.moveTo(off, -S.r).lineTo(off, -S.r - pin)
+        g.moveTo(off, S.r).lineTo(off, S.r + pin)
+        g.moveTo(-S.r, off).lineTo(-S.r - pin, off)
+        g.moveTo(S.r, off).lineTo(S.r + pin, off)
+      }
+      g.stroke({ width: Math.max(1.5, S.r * 0.05), color: rColor, alpha: 0.55 })
+      node.addChild(g)
+
+      // 插槽燈：開放位（依 Step）為暗槽，佔據者亮玩家色
+      const slotSize = S.r * 0.42
+      const slotGap = slotSize * 0.42
+      const slotCount = game.step
+      const totalW = slotCount * slotSize + (slotCount - 1) * slotGap
+      const sg = new Graphics()
+      for (let i = 0; i < slotCount; i++) {
+        const x = -totalW / 2 + i * (slotSize + slotGap)
+        sg.roundRect(x, -slotSize / 2, slotSize, slotSize, slotSize * 0.2)
+        if (owners[i]) {
+          sg.fill(colorOf(owners[i]))
+        } else {
+          sg.fill(0x0b0e17)
+          sg.roundRect(x, -slotSize / 2, slotSize, slotSize, slotSize * 0.2)
+          sg.stroke({ width: 1.2, color: 0x2c3760 })
+        }
+      }
+      node.addChild(sg)
 
       const label = new Text({
         text: city.name,
@@ -281,7 +369,7 @@ export class MapBoard {
         resolution: 2,
       })
       label.anchor.set(0.5, 0)
-      label.position.set(0, S.nameY)
+      label.position.set(0, S.nameY + S.r * 0.18)
       node.addChild(label)
 
       if (isActive) {
