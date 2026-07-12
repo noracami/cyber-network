@@ -170,12 +170,19 @@ export class MapBoard {
 
   redraw() {
     if (!this.app || !this.props) return
-    const { map, game, colorOf, buildableCost, onCityTap, onHover } = this.props
+    const { map, game, colorOf, buildableCost, onCityTap, onHover, layout } = this.props
 
     for (const child of this.root.removeChildren()) child.destroy({ children: true })
 
     const sx = (x) => PAD + (x / 100) * (WORLD.w - PAD * 2)
     const sy = (y) => PAD + (y / 100) * (WORLD.h - PAD * 2)
+    // 網格佈局時城市座標換成吸附後的位置；地理佈局用原始數據
+    const posOf = (city) => (layout ? layout.positions.get(city.id) : city.pos)
+    // 網格模式間距寬裕（~178px），節點與線都放大一階；
+    // 地理模式受最擠城市對（72px）限制，維持較小尺寸
+    const S = layout
+      ? { r: 44, edgeW: 5, pipR: 8, pipGap: 18, nameSize: 18, nameY: 52, costSize: 15 }
+      : { r: 24, edgeW: 4, pipR: 5, pipGap: 11, nameSize: 16, nameY: 28, costSize: 14 }
 
     const cityById = new Map(map.cities.map((c) => [c.id, c]))
     const regionColor = new Map(map.regions.map((r) => [r.id, r.color]))
@@ -186,29 +193,48 @@ export class MapBoard {
     this.root.addChild(edgeLayer, cityLayer)
 
     // 邊與過路費
-    for (const { between: [a, b], cost } of map.edges) {
+    map.edges.forEach(({ between: [a, b], cost }, edgeIndex) => {
       const ca = cityById.get(a)
       const cb = cityById.get(b)
       const dim = !active.has(ca.region) || !active.has(cb.region)
 
+      // 折點序列：地理模式是兩端直線；網格模式走水平／垂直折線（含車道錯開）
+      const points = layout
+        ? layout.paths[edgeIndex].map((p) => ({
+            x: sx((p.x / (layout.cols - 1)) * 100),
+            y: sy((p.y / (layout.rows - 1)) * 100),
+          }))
+        : [ca.pos, cb.pos].map((p) => ({ x: sx(p.x), y: sy(p.y) }))
+
       const line = new Graphics()
-      line
-        .moveTo(sx(ca.pos.x), sy(ca.pos.y))
-        .lineTo(sx(cb.pos.x), sy(cb.pos.y))
-        .stroke({ width: 3, color: 0x263054, alpha: dim ? 0.2 : 1 })
+      line.moveTo(points[0].x, points[0].y)
+      for (const point of points.slice(1)) line.lineTo(point.x, point.y)
+      line.stroke({ width: S.edgeW, color: 0x263054, alpha: dim ? 0.2 : 1, join: 'round' })
       edgeLayer.addChild(line)
 
       if (!dim) {
+        // 過路費標在最長線段的中點
+        let best = null
+        for (let i = 1; i < points.length; i++) {
+          const len = Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y)
+          if (!best || len > best.len) {
+            best = {
+              len,
+              x: (points[i].x + points[i - 1].x) / 2,
+              y: (points[i].y + points[i - 1].y) / 2,
+            }
+          }
+        }
         const label = new Text({
           text: String(cost),
-          style: { fontSize: 14, fill: 0x6b7699 },
+          style: { fontSize: S.costSize, fill: 0x6b7699 },
           resolution: 2,
         })
         label.anchor.set(0.5)
-        label.position.set((sx(ca.pos.x) + sx(cb.pos.x)) / 2, (sy(ca.pos.y) + sy(cb.pos.y)) / 2)
+        label.position.set(best.x, best.y)
         edgeLayer.addChild(label)
       }
-    }
+    })
 
     // 城市節點
     for (const city of map.cities) {
@@ -217,33 +243,33 @@ export class MapBoard {
       const cost = isActive ? buildableCost(city.id) : null
 
       const node = new Container()
-      node.position.set(sx(city.pos.x), sy(city.pos.y))
+      node.position.set(sx(posOf(city).x), sy(posOf(city).y))
       node.alpha = isActive ? 1 : 0.15
 
       const circle = new Graphics()
       circle
-        .circle(0, 0, 24)
+        .circle(0, 0, S.r)
         .fill(0x121627)
-        .circle(0, 0, 24)
+        .circle(0, 0, S.r)
         .stroke({
-          width: cost != null ? 4 : 2.5,
+          width: cost != null ? S.edgeW : S.edgeW * 0.6,
           color: cost != null ? 0x37e6d4 : regionColor.get(city.region),
         })
       node.addChild(circle)
 
       owners.forEach((ownerId, index) => {
         const pip = new Graphics()
-        pip.circle(-11 + index * 11, 0, 5).fill(colorOf(ownerId))
+        pip.circle(-S.pipGap + index * S.pipGap, 0, S.pipR).fill(colorOf(ownerId))
         node.addChild(pip)
       })
 
       const label = new Text({
         text: city.name,
-        style: { fontSize: 16, fill: 0xb8c2e0 },
+        style: { fontSize: S.nameSize, fill: 0xb8c2e0 },
         resolution: 2,
       })
       label.anchor.set(0.5, 0)
-      label.position.set(0, 28)
+      label.position.set(0, S.nameY)
       node.addChild(label)
 
       if (isActive) {

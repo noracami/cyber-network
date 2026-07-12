@@ -2,11 +2,14 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { MapBoard } from '../game/board'
 import { buildAdjacency, minToll } from '../game/dijkstra'
+import { gridLayout } from '../game/gridLayout'
 import { seatColor } from '../game/text'
 import { useRoomStore } from '../stores/room'
+import { useSettingsStore } from '../stores/settings'
 import { useStaticStore } from '../stores/staticData'
 
 const room = useRoomStore()
+const settings = useSettingsStore()
 const staticStore = useStaticStore()
 
 const host = ref(/** @type {HTMLElement | null} */ (null))
@@ -20,6 +23,11 @@ const adjacency = computed(() =>
   staticStore.loaded && room.game
     ? buildAdjacency(staticStore.map, room.game.active_regions)
     : null
+)
+
+/** 網格佈局（純顯示層）；地理模式為 null */
+const layout = computed(() =>
+  settings.mapLayout === 'grid' && staticStore.loaded ? gridLayout(staticStore.map) : null
 )
 
 const myBuildTurn = computed(
@@ -42,6 +50,7 @@ function redraw() {
   board.update({
     map: staticStore.map,
     game: room.game,
+    layout: layout.value,
     colorOf: (id) => seatColor(room.seats, id),
     buildableCost: (cityId) => buildCost(cityId),
     onCityTap: (cityId) => {
@@ -79,13 +88,23 @@ onBeforeUnmount(() => board?.destroy())
 
 watch(() => room.game, redraw)
 watch(() => staticStore.loaded, redraw)
+watch(layout, redraw)
 </script>
 
 <template>
   <div class="map-wrap panel">
     <div ref="host" class="map-canvas"></div>
 
-    <button class="map-reset btn ghost sm" title="回到全圖" @click="resetMapView">⤢ 全圖</button>
+    <div class="map-tools">
+      <button
+        class="btn ghost sm"
+        :title="settings.mapLayout === 'grid' ? '切回地理位置佈局' : '切換垂直水平線路佈局'"
+        @click="settings.toggleMapLayout()"
+      >
+        {{ settings.mapLayout === 'grid' ? '🌐 地理' : '⊞ 網格' }}
+      </button>
+      <button class="btn ghost sm" title="回到全圖" @click="resetMapView">⤢ 全圖</button>
+    </div>
 
     <div
       v-if="hover"
