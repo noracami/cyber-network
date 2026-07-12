@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { TYPE_META } from '../game/text'
 import { useStaticStore } from '../stores/staticData'
 import { useUiStore } from '../stores/ui'
+import GameIcon from './GameIcon.vue'
 
 const ui = useUiStore()
 const staticStore = useStaticStore()
@@ -23,14 +24,14 @@ const meta = computed(() => (plant.value ? TYPE_META[plant.value.type] : null))
       </div>
       <dl class="pd-stats">
         <dt>類型</dt>
-        <dd>{{ meta.icon }} {{ meta.label }}</dd>
+        <dd><GameIcon :name="plant.type" :size="16" /> {{ meta.label }}</dd>
         <dt>燃料需求</dt>
         <dd>
-          <template v-if="plant.fuel > 0">{{ meta.icon }} ×{{ plant.fuel }}<span v-if="plant.type === 'hybrid'" class="hint">（水力／火力可任意混搭）</span></template>
+          <template v-if="plant.fuel > 0"><GameIcon :name="plant.type" :size="14" /> ×{{ plant.fuel }}<span v-if="plant.type === 'hybrid'" class="hint">（水力／火力可任意混搭）</span></template>
           <template v-else>免燃料</template>
         </dd>
         <dt>供電</dt>
-        <dd>⚡ {{ plant.powers }} 節點</dd>
+        <dd><GameIcon name="bolt" :size="14" /> {{ plant.powers }} 節點</dd>
         <dt v-if="plant.fuel > 0">儲存容量</dt>
         <dd v-if="plant.fuel > 0">{{ plant.fuel * 2 }}（需求 ×2，計入你的總儲存上限）</dd>
       </dl>

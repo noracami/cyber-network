@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { ladder } from '../game/ladder'
-import { RESOURCE_META } from '../game/text'
+import GameIcon from './GameIcon.vue'
 
 const props = defineProps({
   /** 資源 id（hydro/thermal/waste/quantum） */
@@ -11,8 +11,6 @@ const props = defineProps({
   /** 採購預覽數量：存量區最便宜的 n 格顯示黃色 −單價 */
   taking: { type: Number, default: 0 },
 })
-
-const icon = computed(() => RESOURCE_META[props.resource]?.icon)
 
 /**
  * 依價位分組成格位圖。價梯不變量：存量永遠填在最貴端連續格位；
@@ -44,7 +42,7 @@ const groups = computed(() => {
           class="rm-socket"
           :class="state"
         >
-          <template v-if="state === 'filled'">{{ icon }}</template>
+          <GameIcon v-if="state === 'filled'" :name="resource" :size="14" />
           <template v-else-if="state === 'taking'">-{{ group.price }}</template>
         </span>
       </div>

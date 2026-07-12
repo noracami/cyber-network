@@ -1,20 +1,22 @@
 // 顯示文案：資源／階段／事件的中文對照。
 
+// icon（emoji）僅供純文字流使用（事件日誌、聊天、tooltip）；
+// 面板 UI 一律改用 GameIcon.vue（v1.3 A1），color 為各類型專色。
 export const RESOURCE_META = {
-  hydro: { icon: '💧', label: '水力' },
-  thermal: { icon: '🔥', label: '火力' },
-  waste: { icon: '♻️', label: '廢料' },
-  quantum: { icon: '🧠', label: '算力' },
+  hydro: { icon: '💧', label: '水力', color: '#4da6ff' },
+  thermal: { icon: '🔥', label: '火力', color: '#fb923c' },
+  waste: { icon: '♻️', label: '廢料', color: '#4ade80' },
+  quantum: { icon: '🧠', label: '算力', color: '#e879f9' },
 }
 
 export const TYPE_META = {
-  hydro: { icon: '💧', label: '水力' },
-  thermal: { icon: '🔥', label: '火力' },
-  waste: { icon: '♻️', label: '廢料' },
-  quantum: { icon: '🧠', label: '算力' },
-  hybrid: { icon: '💧🔥', label: '混合' },
-  self: { icon: '🍃', label: '自持' },
-  fusion: { icon: '🌀', label: '奇點' },
+  hydro: { icon: '💧', label: '水力', color: '#4da6ff' },
+  thermal: { icon: '🔥', label: '火力', color: '#fb923c' },
+  waste: { icon: '♻️', label: '廢料', color: '#4ade80' },
+  quantum: { icon: '🧠', label: '算力', color: '#e879f9' },
+  hybrid: { icon: '💧🔥', label: '混合', color: '#4da6ff' },
+  self: { icon: '🍃', label: '自持', color: '#a3e635' },
+  fusion: { icon: '🌀', label: '奇點', color: '#9d6bff' },
 }
 
 export const PHASE_TEXT = {

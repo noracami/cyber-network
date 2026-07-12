@@ -6,6 +6,7 @@ import { RESOURCE_META } from '../game/text'
 import { useRoomStore } from '../stores/room'
 import { useStaticStore } from '../stores/staticData'
 import { useUiStore } from '../stores/ui'
+import GameIcon from './GameIcon.vue'
 import PlantCard from './PlantCard.vue'
 import ResourceLadder from './ResourceLadder.vue'
 import ResourceMarket from './ResourceMarket.vue'
@@ -160,7 +161,7 @@ function submitPower() {
               <button class="btn ghost sm" @click="step(resource, 1)">＋</button>
               <button class="btn ghost sm" :disabled="qty[resource] === 0" @click="step(resource, -1)">－</button>
             </div>
-            <span class="buy-name">{{ meta.icon }} {{ meta.label }}</span>
+            <span class="buy-name"><GameIcon :name="resource" :size="15" /> {{ meta.label }}</span>
             <ResourceLadder
               :resource="resource"
               :count="game.resource_market[resource].count"
@@ -173,7 +174,7 @@ function submitPower() {
         </div>
         <div class="dock-row">
           <span class="buy-math">
-            💰<span class="num-box">{{ me.credits }}</span> −
+            <GameIcon name="credits" :size="16" /><span class="num-box">{{ me.credits }}</span> −
             <span class="num-box">${{ totalPrice }}</span> ＝ 剩
             <span class="num-box" :class="{ error: me.credits - totalPrice < 0 }">${{ me.credits - totalPrice }}</span>
           </span>

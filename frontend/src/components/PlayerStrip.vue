@@ -1,9 +1,10 @@
 <script setup>
 import { computed } from 'vue'
 import { capsOf } from '../game/capacity'
-import { RESOURCE_META, seatColor, TYPE_META } from '../game/text'
+import { seatColor } from '../game/text'
 import { useRoomStore } from '../stores/room'
 import { useUiStore } from '../stores/ui'
+import GameIcon from './GameIcon.vue'
 
 const room = useRoomStore()
 const ui = useUiStore()
@@ -21,10 +22,11 @@ const players = computed(() => {
 })
 
 /**
- * 儲存凹槽模型（v1.2）：凹槽數＝容量、格內符號＝持有的資源。
+ * 儲存凹槽模型（v1.2）：凹槽數＝容量、格內圖示＝持有的資源。
  * 專屬容量一列一類型；混合容量另列，裝水力／火力超出專屬容量的溢出
  * （與引擎的總量驗證等價，見 engine-design §6.3）。
- * @returns {{key: string, label: string, slots: (string|null)[]}[]}
+ * slots 內容是資源 key（GameIcon 用）或 null（空凹槽）。
+ * @returns {{key: string, slots: (string|null)[]}[]}
  */
 function storageRows(player) {
   const caps = capsOf(player.plants)
@@ -36,19 +38,17 @@ function storageRows(player) {
     const filled = Math.min(res[type], caps[type])
     rows.push({
       key: type,
-      label: RESOURCE_META[type].icon,
-      slots: Array.from({ length: caps[type] }, (_, i) => (i < filled ? RESOURCE_META[type].icon : null)),
+      slots: Array.from({ length: caps[type] }, (_, i) => (i < filled ? type : null)),
     })
   }
 
   if (caps.hybrid > 0) {
     const overflow = [
-      ...Array(Math.max(0, res.hydro - caps.hydro)).fill(RESOURCE_META.hydro.icon),
-      ...Array(Math.max(0, res.thermal - caps.thermal)).fill(RESOURCE_META.thermal.icon),
+      ...Array(Math.max(0, res.hydro - caps.hydro)).fill('hydro'),
+      ...Array(Math.max(0, res.thermal - caps.thermal)).fill('thermal'),
     ]
     rows.push({
       key: 'hybrid',
-      label: '💧🔥',
       slots: Array.from({ length: caps.hybrid }, (_, i) => overflow[i] || null),
     })
   }
@@ -68,7 +68,10 @@ function storageRows(player) {
       <div class="pc-row">
         <span class="pc-dot" :style="{ background: player.color }"></span>
         <strong>{{ player.name }}</strong>
-        <span class="hint">💰{{ player.credits }}・🏙{{ player.cities.length }}</span>
+        <span class="hint stat-pair">
+          <GameIcon name="credits" :size="14" />{{ player.credits }}
+          <GameIcon name="city" :size="14" />{{ player.cities.length }}
+        </span>
       </div>
       <div class="pc-row hint">
         <button
@@ -78,20 +81,24 @@ function storageRows(player) {
           title="點擊查看設施詳情"
           @click="ui.showPlant(plant.number)"
         >
+          #{{ plant.number }}
+          <GameIcon :name="plant.type" :size="12" />
           <template v-if="player.id === room.selfId">
-            #{{ plant.number }}{{ TYPE_META[plant.type]?.icon }}<template v-if="plant.fuel > 0">×{{ plant.fuel }}</template>⚡{{ plant.powers }}
+            <template v-if="plant.fuel > 0">×{{ plant.fuel }}</template>
+            <GameIcon name="bolt" :size="11" />{{ plant.powers }}
           </template>
-          <template v-else>#{{ plant.number }}{{ TYPE_META[plant.type]?.icon }}</template>
         </button>
       </div>
       <div v-for="row in player.storage" :key="row.key" class="pc-row storage-row">
-        <span class="storage-label">{{ row.label }}</span>
+        <span class="storage-label"><GameIcon :name="row.key" :size="14" /></span>
         <span
           v-for="(slot, index) in row.slots"
           :key="index"
           class="res-slot"
           :class="{ filled: slot }"
-        >{{ slot || '' }}</span>
+        >
+          <GameIcon v-if="slot" :name="slot" :size="13" />
+        </span>
       </div>
     </div>
   </div>

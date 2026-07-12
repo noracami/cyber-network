@@ -1,9 +1,9 @@
 <script setup>
 import { computed } from 'vue'
-import { RESOURCE_META } from '../game/text'
 import { useRoomStore } from '../stores/room'
 import { useStaticStore } from '../stores/staticData'
 import { useUiStore } from '../stores/ui'
+import GameIcon from './GameIcon.vue'
 
 const ui = useUiStore()
 const room = useRoomStore()
@@ -54,13 +54,6 @@ const paramRows = computed(() =>
 const payoutRows = computed(() =>
   (rules.value?.payout || []).map((income, powered) => ({ powered, income }))
 )
-
-/** @param {number[]} amounts step 補貨量（依 resupply_order 排列） */
-function resupplyText(amounts) {
-  return amounts
-    .map((qty, index) => `${RESOURCE_META[resupplyOrder.value[index]]?.icon || ''}${qty}`)
-    .join(' ')
-}
 </script>
 
 <template>
@@ -144,9 +137,11 @@ function resupplyText(amounts) {
             <tbody>
               <tr v-for="row in resupplyRows" :key="row.count" :class="{ hl: row.count === playerCount }">
                 <td>{{ row.count }}</td>
-                <td>{{ resupplyText(row.step1) }}</td>
-                <td>{{ resupplyText(row.step2) }}</td>
-                <td>{{ resupplyText(row.step3) }}</td>
+                <td v-for="stepKey in ['step1', 'step2', 'step3']" :key="stepKey">
+                  <span v-for="(qty, index) in row[stepKey]" :key="index" class="rs-pair">
+                    <GameIcon :name="resupplyOrder[index]" :size="13" />{{ qty }}
+                  </span>
+                </td>
               </tr>
             </tbody>
           </table>
