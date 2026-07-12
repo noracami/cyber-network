@@ -29,13 +29,33 @@ export function buildAdjacency(map, activeRegions) {
  * @param {string} target
  */
 export function minToll(adjacency, sources, target) {
-  if (sources.length === 0) return 0
+  return minTollPath(adjacency, sources, target).cost
+}
+
+/**
+ * 同 minToll，另回傳最低費路徑的城市序列（含起訖；無路徑時為空陣列）。
+ * 供擴建確認時的連線動畫使用。
+ * @param {Map<string, Array<[string, number]>>} adjacency
+ * @param {string[]} sources
+ * @param {string} target
+ * @returns {{cost: number | null, path: string[]}}
+ */
+export function minTollPath(adjacency, sources, target) {
+  if (sources.length === 0) return { cost: 0, path: [] }
 
   /** @type {Map<string, number>} */
   const dist = new Map(sources.map((s) => [s, 0]))
+  /** @type {Map<string, string>} */
+  const prev = new Map()
   const done = new Set()
   // 42 節點規模，陣列掃描當 priority queue 就夠了
   const frontier = [...sources]
+
+  const pathTo = (node) => {
+    const path = [node]
+    while (prev.has(path[0])) path.unshift(prev.get(path[0]))
+    return path
+  }
 
   while (frontier.length > 0) {
     let best = 0
@@ -43,7 +63,7 @@ export function minToll(adjacency, sources, target) {
       if ((dist.get(frontier[i]) ?? Infinity) < (dist.get(frontier[best]) ?? Infinity)) best = i
     }
     const node = frontier.splice(best, 1)[0]
-    if (node === target) return dist.get(node) ?? null
+    if (node === target) return { cost: dist.get(node) ?? null, path: pathTo(node) }
     if (done.has(node)) continue
     done.add(node)
 
@@ -51,9 +71,12 @@ export function minToll(adjacency, sources, target) {
       const candidate = (dist.get(node) ?? 0) + cost
       if (candidate < (dist.get(neighbor) ?? Infinity)) {
         dist.set(neighbor, candidate)
+        prev.set(neighbor, node)
         frontier.push(neighbor)
       }
     }
   }
-  return dist.has(target) ? (dist.get(target) ?? null) : null
+  return dist.has(target)
+    ? { cost: dist.get(target) ?? null, path: pathTo(target) }
+    : { cost: null, path: [] }
 }

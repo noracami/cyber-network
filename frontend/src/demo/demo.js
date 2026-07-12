@@ -157,6 +157,33 @@ function seed() {
   ])
 }
 
+/**
+ * 展示模式的動畫試播：走真實 game_events 管線（applyEvents → MapBoard watch）。
+ * @param {'built' | 'powered' | 'step'} kind
+ */
+export function fireFx(kind) {
+  const room = useRoomStore()
+  const game = room.game
+  if (!game) return
+  if (kind === 'built') {
+    room.applyEvents([
+      { type: 'city_built', player: SELF, city: game.players[SELF].cities[0], cost: 10 },
+      { type: 'plant_bought', player: SELF, plant: game.players[SELF].plants[0]?.number, price: 20 },
+    ])
+  } else if (kind === 'powered') {
+    room.applyEvents(
+      Object.keys(game.players).map((player) => ({
+        type: 'powered',
+        player,
+        powered: game.players[player].cities.length,
+        income: 40,
+      }))
+    )
+  } else if (kind === 'step') {
+    room.applyEvents([{ type: 'step3_revealed' }, { type: 'step_changed', step: 3 }])
+  }
+}
+
 /** @param {string} key */
 export function applyScenario(key) {
   const room = useRoomStore()

@@ -3,6 +3,11 @@ import { computed, ref } from 'vue'
 import { useRoomStore } from '../stores/room'
 import PlantCard from './PlantCard.vue'
 
+defineProps({
+  /** 嵌在操作面板內（競標階段），不套獨立 panel 外框 */
+  embedded: { type: Boolean, default: false },
+})
+
 const room = useRoomStore()
 
 const game = computed(() => room.game)
@@ -34,7 +39,7 @@ async function confirmNominate() {
 </script>
 
 <template>
-  <div v-if="game" class="market panel">
+  <div v-if="game" class="market" :class="embedded ? 'embedded' : 'panel'">
     <h3>設施市場 <span class="hint">牌庫 {{ game.deck_count }}</span></h3>
 
     <div class="market-row">

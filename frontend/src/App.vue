@@ -8,6 +8,7 @@ import GameView from './components/GameView.vue'
 import LobbyView from './components/LobbyView.vue'
 import LoginModal from './components/LoginModal.vue'
 import PlantDetailModal from './components/PlantDetailModal.vue'
+import PlayerStrip from './components/PlayerStrip.vue'
 import RulesModal from './components/RulesModal.vue'
 import { enterDemo, isDemo } from './demo/demo'
 import { useRoomStore } from './stores/room'
@@ -109,7 +110,10 @@ function logoutPassword() {
           <p v-if="room.lastError" class="error-toast">{{ room.lastError }}</p>
         </transition>
       </section>
-      <ChatPanel />
+      <aside class="right-col">
+        <PlayerStrip v-if="room.status === 'in_game'" />
+        <ChatPanel />
+      </aside>
     </main>
 
     <RulesModal />

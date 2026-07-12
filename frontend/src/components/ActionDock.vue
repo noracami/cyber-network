@@ -7,9 +7,11 @@ import { useRoomStore } from '../stores/room'
 import { useStaticStore } from '../stores/staticData'
 import { useUiStore } from '../stores/ui'
 import GameIcon from './GameIcon.vue'
+import MarketPanel from './MarketPanel.vue'
 import PlantCard from './PlantCard.vue'
 import ResourceLadder from './ResourceLadder.vue'
 import ResourceMarket from './ResourceMarket.vue'
+import StorageSockets from './StorageSockets.vue'
 
 const room = useRoomStore()
 const staticStore = useStaticStore()
@@ -97,8 +99,9 @@ function submitPower() {
       <p class="hint">👁 旁觀模式——你可以看牌局和聊天，但不能操作。</p>
     </template>
 
-    <!-- 競標階段 -->
+    <!-- 競標階段：設施市場嵌進操作區（提名／看牌都在最上面） -->
     <template v-else-if="game.phase === 'auction'">
+      <MarketPanel embedded />
       <div v-if="discarding" class="dock-section">
         <h3>設施超過上限，選一座棄置（不能棄剛買的 #{{ justBought }}）</h3>
         <div class="dock-cards">
@@ -136,7 +139,7 @@ function submitPower() {
       </div>
 
       <div v-else-if="isNominator" class="dock-section dock-row">
-        <p class="hint">從下方設施市場點選卡牌提名，或——</p>
+        <p class="hint">從上方設施市場點選卡牌提名，或——</p>
         <button
           class="btn ghost"
           :disabled="game.round === 1"
@@ -208,16 +211,22 @@ function submitPower() {
     <template v-else-if="game.phase === 'bureaucracy'">
       <div v-if="!submitted" class="dock-section">
         <h3>選擇要啟動的設施</h3>
-        <div class="dock-cards">
-          <PlantCard
-            v-for="plant in me.plants"
-            :key="plant.number"
-            :number="plant.number"
-            clickable
-            :selected="chosen.has(plant.number)"
-            @click="togglePlant(plant.number)"
-          />
-          <p v-if="me.plants.length === 0" class="hint">你沒有任何設施。</p>
+        <div class="dock-flex">
+          <div class="dock-cards">
+            <PlantCard
+              v-for="plant in me.plants"
+              :key="plant.number"
+              :number="plant.number"
+              clickable
+              :selected="chosen.has(plant.number)"
+              @click="togglePlant(plant.number)"
+            />
+            <p v-if="me.plants.length === 0" class="hint">你沒有任何設施。</p>
+          </div>
+          <div class="dock-storage">
+            <p class="hint">你的儲存</p>
+            <StorageSockets :plants="me.plants" :resources="me.resources" />
+          </div>
         </div>
         <div class="dock-row">
           <span :class="{ error: !feasible }">

@@ -1,13 +1,30 @@
 <script setup>
-import { computed } from 'vue'
-import { capsOf } from '../game/capacity'
+import { computed, ref, watch } from 'vue'
 import { seatColor } from '../game/text'
 import { useRoomStore } from '../stores/room'
 import { useUiStore } from '../stores/ui'
 import GameIcon from './GameIcon.vue'
+import StorageSockets from './StorageSockets.vue'
 
 const room = useRoomStore()
 const ui = useUiStore()
+
+/** 剛得標的設施卡號——標籤閃光 1.3 秒（A3） */
+const flashing = ref(new Set())
+watch(
+  () => room.lastEvents,
+  (events) => {
+    for (const event of events || []) {
+      if (event.type !== 'plant_bought') continue
+      flashing.value = new Set([...flashing.value, event.plant])
+      setTimeout(() => {
+        const next = new Set(flashing.value)
+        next.delete(event.plant)
+        flashing.value = next
+      }, 1400)
+    }
+  }
+)
 
 const players = computed(() => {
   const game = room.game
@@ -16,45 +33,9 @@ const players = computed(() => {
     id,
     name: room.nameOf(id),
     color: seatColor(room.seats, id),
-    storage: storageRows(game.players[id]),
     ...game.players[id],
   }))
 })
-
-/**
- * 儲存凹槽模型（v1.2）：凹槽數＝容量、格內圖示＝持有的資源。
- * 專屬容量一列一類型；混合容量另列，裝水力／火力超出專屬容量的溢出
- * （與引擎的總量驗證等價，見 engine-design §6.3）。
- * slots 內容是資源 key（GameIcon 用）或 null（空凹槽）。
- * @returns {{key: string, slots: (string|null)[]}[]}
- */
-function storageRows(player) {
-  const caps = capsOf(player.plants)
-  const res = player.resources
-  const rows = []
-
-  for (const type of ['hydro', 'thermal', 'waste', 'quantum']) {
-    if (caps[type] === 0) continue
-    const filled = Math.min(res[type], caps[type])
-    rows.push({
-      key: type,
-      slots: Array.from({ length: caps[type] }, (_, i) => (i < filled ? type : null)),
-    })
-  }
-
-  if (caps.hybrid > 0) {
-    const overflow = [
-      ...Array(Math.max(0, res.hydro - caps.hydro)).fill('hydro'),
-      ...Array(Math.max(0, res.thermal - caps.thermal)).fill('thermal'),
-    ]
-    rows.push({
-      key: 'hybrid',
-      slots: Array.from({ length: caps.hybrid }, (_, i) => overflow[i] || null),
-    })
-  }
-
-  return rows
-}
 </script>
 
 <template>
@@ -78,6 +59,7 @@ function storageRows(player) {
           v-for="plant in player.plants"
           :key="plant.number"
           class="mini-plant"
+          :class="{ flash: flashing.has(plant.number) }"
           title="點擊查看設施詳情"
           @click="ui.showPlant(plant.number)"
         >
@@ -89,17 +71,7 @@ function storageRows(player) {
           </template>
         </button>
       </div>
-      <div v-for="row in player.storage" :key="row.key" class="pc-row storage-row">
-        <span class="storage-label"><GameIcon :name="row.key" :size="14" /></span>
-        <span
-          v-for="(slot, index) in row.slots"
-          :key="index"
-          class="res-slot"
-          :class="{ filled: slot }"
-        >
-          <GameIcon v-if="slot" :name="slot" :size="13" />
-        </span>
-      </div>
+      <StorageSockets :plants="player.plants" :resources="player.resources" />
     </div>
   </div>
 </template>

@@ -325,9 +325,26 @@ a.btn {
 
 /* ── 聊天室 ───────────────────────────── */
 
-.chat {
-  width: 300px;
+/* 右欄：玩家狀態卡（遊戲中）＋聊天室 */
+.right-col {
+  width: 340px;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.right-col .player-strip {
+  flex-direction: column;
+}
+
+.right-col .player-chip {
+  min-width: 0;
+}
+
+.chat {
+  width: 100%;
+  flex: 1;
   display: flex;
   flex-direction: column;
   background: var(--bg-panel);
@@ -335,6 +352,7 @@ a.btn {
   border-radius: 10px;
   overflow: hidden;
   max-height: calc(100vh - 140px);
+  min-height: 320px;
 }
 
 .chat-tabs {
@@ -847,6 +865,29 @@ button.mini-plant:hover {
   color: var(--text-bright);
 }
 
+/* 得標閃光（A3） */
+button.mini-plant.flash {
+  animation: plant-flash 1.3s ease-out;
+}
+
+@keyframes plant-flash {
+  0% {
+    border-color: var(--cyan);
+    box-shadow: 0 0 14px var(--cyan);
+    color: var(--cyan);
+  }
+  100% {
+    border-color: var(--border);
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button.mini-plant.flash {
+    animation: none;
+  }
+}
+
 /* 操作面板 */
 
 .action-dock {
@@ -870,6 +911,18 @@ button.mini-plant:hover {
   gap: 8px;
   flex-wrap: wrap;
   margin-bottom: 8px;
+}
+
+/* 結算供電：設施卡與儲存凹槽並排（v1.3 回饋） */
+.dock-flex {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.dock-storage p {
+  margin: 0 0 6px;
 }
 
 .bid-input {
@@ -1076,7 +1129,8 @@ button.mini-plant:hover {
   letter-spacing: -0.03em;
 }
 
-.resource-market.embedded {
+.resource-market.embedded,
+.market.embedded {
   margin-bottom: 12px;
   padding: 10px 12px;
   border: 1px solid var(--border);
@@ -1314,9 +1368,13 @@ button.mini-plant:hover {
     flex-direction: column;
   }
 
-  .chat {
+  .right-col {
     width: 100%;
+  }
+
+  .chat {
     max-height: 320px;
+    min-height: 0;
   }
 
   .map-canvas {

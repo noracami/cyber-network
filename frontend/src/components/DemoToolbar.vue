@@ -1,5 +1,5 @@
 <script setup>
-import { SCENARIOS, applyScenario, scenario } from '../demo/demo'
+import { SCENARIOS, applyScenario, fireFx, scenario } from '../demo/demo'
 </script>
 
 <template>
@@ -14,6 +14,10 @@ import { SCENARIOS, applyScenario, scenario } from '../demo/demo'
     >
       {{ item.label }}
     </button>
-    <span class="hint">假資料渲染、動作不送出——玩家列電廠可點、頂欄可開規則彈窗</span>
+    <span class="demo-tag">▶</span>
+    <button class="tab" @click="fireFx('built')">蓋城</button>
+    <button class="tab" @click="fireFx('powered')">供電</button>
+    <button class="tab" @click="fireFx('step')">Step</button>
+    <span class="hint">假資料渲染、動作不送出</span>
   </div>
 </template>

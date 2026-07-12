@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { MapBoard } from '../game/board'
-import { buildAdjacency, minToll } from '../game/dijkstra'
+import { buildAdjacency, minToll, minTollPath } from '../game/dijkstra'
 import { gridLayout } from '../game/gridLayout'
 import { seatColor } from '../game/text'
 import { useRoomStore } from '../stores/room'
@@ -57,6 +57,12 @@ function redraw() {
       const cost = buildCost(cityId)
       if (cost == null) return
       pendingBuild.value = { id: cityId, name: staticStore.cityName(cityId), cost }
+      // 確認框開啟期間：路徑連線動畫＋沿線過路費放大＋目的地進場費
+      const myCities = room.game?.players[room.selfId]?.cities || []
+      const { path } = minTollPath(adjacency.value, myCities, cityId)
+      const owners = room.game?.city_owners[cityId] || []
+      const entryFee = staticStore.rules.city_slot_costs[owners.length]
+      board?.showRoute(path, seatColor(room.seats, room.selfId), cityId, entryFee)
     },
     onHover: (cityId, x, y) => {
       if (!cityId) {
@@ -90,10 +96,19 @@ onBeforeUnmount(() => board?.destroy())
 watch(() => room.game, redraw)
 watch(() => staticStore.loaded, redraw)
 watch(layout, redraw)
+// 事件動畫（A3）：redraw 先吃新狀態，再播放這批事件的特效
+watch(
+  () => room.lastEvents,
+  (events) => board?.playEvents(events)
+)
 watch(
   () => settings.mapNav,
   (enabled) => board?.setNav(enabled)
 )
+// 確認框收掉（擴建／取消／換狀態）→ 路徑動畫跟著收
+watch(pendingBuild, (pending) => {
+  if (!pending) board?.clearRoute()
+})
 </script>
 
 <template>
@@ -124,12 +139,12 @@ watch(
       class="map-tooltip"
       :style="{ left: hover.x + 14 + 'px', top: hover.y + 14 + 'px' }"
     >
-      {{ hover.name }}<template v-if="hover.cost != null">・約 ${{ hover.cost }}</template>
+      {{ hover.name }}<template v-if="hover.cost != null">・${{ hover.cost }}</template>
     </div>
 
     <div v-if="pendingBuild" class="map-confirm">
       <p>
-        佔據 <strong>{{ pendingBuild.name }}</strong>（預估 ${{ pendingBuild.cost }}）？
+        佔據 <strong>{{ pendingBuild.name }}</strong>（${{ pendingBuild.cost }}）？
       </p>
       <div class="dock-row">
         <button class="btn primary" @click="confirmBuild">擴建</button>

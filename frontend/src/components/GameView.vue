@@ -7,14 +7,14 @@ import GameLog from './GameLog.vue'
 import MapBoard from './MapBoard.vue'
 import MarketPanel from './MarketPanel.vue'
 import PhaseBanner from './PhaseBanner.vue'
-import PlayerStrip from './PlayerStrip.vue'
 import ResourceMarket from './ResourceMarket.vue'
 
 const room = useRoomStore()
 const staticStore = useStaticStore()
 const ready = computed(() => staticStore.loaded)
-// 採購階段時資源市場移進操作面板（v1.2），這裡不重複顯示
+// 當前階段的主面板嵌進操作面板（v1.2/v1.3），下方面板列不重複顯示
 const marketInDock = computed(() => room.game?.phase === 'resources')
+const plantMarketInDock = computed(() => room.game?.phase === 'auction')
 </script>
 
 <template>
@@ -23,11 +23,10 @@ const marketInDock = computed(() => room.game?.phase === 'resources')
 
   <div v-else class="game">
     <PhaseBanner />
-    <MapBoard />
     <ActionDock />
-    <PlayerStrip />
+    <MapBoard />
     <div class="panel-row">
-      <MarketPanel />
+      <MarketPanel v-if="!plantMarketInDock" />
       <ResourceMarket v-if="!marketInDock" />
       <GameLog />
     </div>
