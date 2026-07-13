@@ -8,6 +8,8 @@ WORKDIR /web
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/ ./
+# 圖鑑頁直接 import 後端卡牌 JSON(單一數據來源),放到相對路徑對應的位置
+COPY backend/priv/data/cyber_decks.json /backend/priv/data/cyber_decks.json
 RUN npm run build
 
 # ── Stage 2: 後端 release ────────────────────────
