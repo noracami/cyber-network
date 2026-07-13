@@ -18,8 +18,9 @@ defmodule GridMasterWeb do
   """
 
   # index.html / favicon.svg / icons.svg / og.png：生產映像檔內的 Vue dist（Phoenix 同源服務 SPA）
+  # uploads：card_gen 本地 fallback 儲存（R2 未設定時,見 CardGen.Storage）
   def static_paths,
-    do: ~w(assets fonts images favicon.ico favicon.svg icons.svg og.png robots.txt index.html)
+    do: ~w(assets fonts images favicon.ico favicon.svg icons.svg og.png robots.txt index.html uploads)
 
   def router do
     quote do

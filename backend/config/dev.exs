@@ -54,6 +54,9 @@ config :grid_master, GridMasterWeb.Endpoint,
 # Enable dev routes for dashboard and mailbox
 config :grid_master, dev_routes: true
 
+# 開發用 admin token（生產由 ADMIN_TOKEN / ADMIN_DISCORD_IDS 環境變數控制）
+config :grid_master, admin_token: "dev-admin-token"
+
 # Do not include metadata nor timestamps in development logs
 config :logger, :default_formatter, format: "[$level] $message\n"
 
