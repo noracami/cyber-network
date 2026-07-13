@@ -1,8 +1,10 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useRoomStore } from '../stores/room'
 
 const room = useRoomStore()
+const router = useRouter()
 
 const rooms = ref(/** @type {{id: string, status: string, seated: number, online: number}[]} */ ([]))
 const loading = ref(false)
@@ -33,12 +35,12 @@ function newRoomCode() {
 }
 
 function openRoom() {
-  location.hash = `#/r/${newRoomCode()}`
+  router.push(`/r/${newRoomCode()}`)
 }
 
 /** @param {string} id */
 function joinRoom(id) {
-  location.hash = `#/r/${id}`
+  router.push(`/r/${id}`)
 }
 
 /** @type {ReturnType<typeof setInterval> | null} */

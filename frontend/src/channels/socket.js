@@ -7,8 +7,6 @@ import { useSettingsStore } from '../stores/settings'
 let socket = null
 /** @type {import('phoenix').Channel | null} */
 let channel = null
-/** @type {(() => void) | null} */
-let hashHandler = null
 
 /** 房號 hash 路由（PRD-v1.5 R2）：#/r/<id> ↔ room:<id>，無 hash = main */
 const ROOM_HASH = /^#\/r\/([a-z0-9]{4,6})$/
@@ -25,13 +23,22 @@ function wsUrl() {
   return location.origin.replace(/^http/, 'ws') + '/socket'
 }
 
-/** 建立 WebSocket 連線並加入 hash 指定的房間。Phoenix Socket 會自動斷線重連＋重新 join。 */
-export function connect() {
+/** 建立 WebSocket 連線並加入指定房間。Phoenix Socket 會自動斷線重連＋重新 join。
+ *  冪等:GameShell 因路由切換重新掛載時,既有連線沿用,只補 join。
+ *  切房改由 GameShell watch 路由參數 → switchRoom(),不再自行監聽 hashchange
+ *  （router.push 走 pushState,不會發 hashchange 事件）。
+ *  @param {string} [roomId] */
+export function connect(roomId = roomIdFromHash()) {
   const settings = useSettingsStore()
   const room = useRoomStore()
 
   // 展示模式不連線——真實 room_sync 會蓋掉假資料
   if (room.demoMode) return
+
+  if (socket) {
+    if (roomId !== room.roomId || !channel) joinRoom(roomId)
+    return
+  }
 
   socket = new Socket(wsUrl(), {
     params: {
@@ -53,15 +60,13 @@ export function connect() {
   })
   socket.connect()
 
-  joinRoom(roomIdFromHash())
+  joinRoom(roomId)
+}
 
-  if (!hashHandler) {
-    hashHandler = () => {
-      const id = roomIdFromHash()
-      if (id !== useRoomStore().roomId) joinRoom(id)
-    }
-    window.addEventListener('hashchange', hashHandler)
-  }
+/** 切房入口(GameShell 的路由 watcher 呼叫)。 */
+export function switchRoom(roomId) {
+  if (!socket) return
+  if (roomId !== useRoomStore().roomId) joinRoom(roomId)
 }
 
 /** 切房＝leave 舊 channel＋join 新 channel（同一條 socket），房間狀態歸零等新快照。 */
@@ -96,6 +101,8 @@ function joinRoom(roomId) {
 export function reconnect() {
   if (channel) channel.leave()
   if (socket) socket.disconnect()
+  channel = null
+  socket = null
   connect()
 }
 
