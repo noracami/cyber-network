@@ -1,0 +1,5 @@
+.venv/
+out/
+# 生成原圖(1-3MB/張,可由 prompt 重生成):不進版控
+input/
+__pycache__/

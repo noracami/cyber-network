@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>卡面上色 picker</title>
+<style>
+  body { margin: 0; display: flex; height: 100vh; font: 14px/1.5 system-ui; background: #222; color: #eee; }
+  #side { width: 220px; padding: 14px; box-sizing: border-box; background: #2d2d2d; overflow-y: auto; }
+  #wrap { flex: 1; overflow: auto; display: flex; align-items: flex-start; justify-content: center; padding: 16px; }
+  canvas { max-width: 100%; height: auto; cursor: crosshair; background: #fff; }
+  .sw { display: flex; align-items: center; gap: 8px; padding: 6px 8px; margin: 4px 0; border-radius: 6px; cursor: pointer; border: 2px solid transparent; }
+  .sw.active { border-color: #fff; background: #3a3a3a; }
+  .chip { width: 22px; height: 22px; border-radius: 4px; border: 1px solid #555; }
+  button, label.btn { display: block; width: 100%; margin: 6px 0; padding: 7px; border-radius: 6px; border: 1px solid #555; background: #383838; color: #eee; cursor: pointer; text-align: center; box-sizing: border-box; }
+  #hint { color: #999; font-size: 12px; margin-top: 10px; }
+  input[type=file] { display: none; }
+</style>
+</head>
+<body>
+<div id="side">
+  <h3 style="margin-top:0">色盤</h3>
+  <div id="swatches"></div>
+  <div class="sw" id="eraser"><div class="chip" style="background:repeating-linear-gradient(45deg,#888 0 4px,#ccc 4px 8px)"></div>清除（回預設紙色）</div>
+  <hr style="border-color:#444">
+  <button id="exportJson">匯出 mapping.json</button>
+  <label class="btn">匯入 mapping.json<input type="file" id="importJson" accept=".json"></label>
+  <button id="exportPng">匯出 PNG</button>
+  <div id="status" style="margin-top:10px;padding:6px 8px;background:#333;border-radius:6px;font-size:12px">區塊:—</div>
+  <div id="hint">左鍵點擊或拖曳上色。<br>快捷鍵 1–9 切換色盤。<br>已上色區塊數:<span id="count">0</span></div>
+</div>
+<div id="wrap"><canvas id="cv" width="{{W}}" height="{{H}}"></canvas></div>
+<script>
+const W = {{W}}, H = {{H}};
+const PALETTE = {{PALETTE}};
+const DEFAULT_NAME = Object.keys(PALETTE)[0]; // 第一色當預設(紙色)
+let current = Object.keys(PALETTE)[1] || DEFAULT_NAME;
+let mapping = {};   // region id -> palette name
+
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+const lineart = new Image(), labelsImg = new Image();
+let labelData = null, fillImageData = null;
+
+function hex2rgb(h) { h = h.replace('#',''); return [0,2,4].map(i => parseInt(h.slice(i,i+2),16)); }
+
+function buildSwatches() {
+  const box = document.getElementById('swatches');
+  Object.entries(PALETTE).forEach(([name, hex], i) => {
+    const d = document.createElement('div');
+    d.className = 'sw' + (name === current ? ' active' : '');
+    d.dataset.name = name;
+    d.innerHTML = `<div class="chip" style="background:${hex}"></div>${i+1}. ${name}<span style="color:#888;margin-left:auto">${hex}</span>`;
+    d.onclick = () => setCurrent(name);
+    box.appendChild(d);
+  });
+  document.getElementById('eraser').onclick = () => setCurrent(null);
+}
+function setCurrent(name) {
+  current = name;
+  document.querySelectorAll('.sw').forEach(el => el.classList.toggle('active',
+    (name === null && el.id === 'eraser') || el.dataset.name === name));
+}
+
+function regionAt(px, py) {
+  const i = (py * W + px) * 4;
+  return labelData[i] | (labelData[i+1] << 8) | (labelData[i+2] << 16);
+}
+
+function repaint() {
+  const d = fillImageData.data;
+  const def = hex2rgb(PALETTE[DEFAULT_NAME]);
+  const cache = {};
+  for (const [id, name] of Object.entries(mapping)) cache[id] = hex2rgb(PALETTE[name] || name);
+  for (let p = 0, i = 0; p < W * H; p++, i += 4) {
+    const id = labelData[i] | (labelData[i+1] << 8) | (labelData[i+2] << 16);
+    const c = cache[id] || def;
+    const hl = id === hoverId ? 60 : 0;
+    d[i] = Math.min(255, c[0] + hl); d[i+1] = Math.min(255, c[1] + hl);
+    d[i+2] = Math.min(255, c[2] + hl); d[i+3] = 255;
+  }
+  ctx.putImageData(fillImageData, 0, 0);
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.drawImage(lineart, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+  document.getElementById('count').textContent = Object.keys(mapping).length;
+}
+
+function paintAt(e) {
+  const r = cv.getBoundingClientRect();
+  const px = Math.floor((e.clientX - r.left) * W / r.width);
+  const py = Math.floor((e.clientY - r.top) * H / r.height);
+  if (px < 0 || py < 0 || px >= W || py >= H) return;
+  const id = regionAt(px, py);
+  const before = mapping[id];
+  if (current === null) delete mapping[id]; else mapping[id] = current;
+  if (mapping[id] !== before) repaint();
+}
+let painting = false, hoverId = -1;
+function updateStatus(id) {
+  document.getElementById('status').textContent =
+    id > 0 ? `區塊:#${id} — ${mapping[id] || '(預設紙色)'}` : '區塊:—';
+}
+cv.addEventListener('mousedown', e => { painting = true; paintAt(e); });
+cv.addEventListener('mousemove', e => {
+  if (painting) { paintAt(e); return; }
+  const r = cv.getBoundingClientRect();
+  const px = Math.floor((e.clientX - r.left) * W / r.width);
+  const py = Math.floor((e.clientY - r.top) * H / r.height);
+  if (px < 0 || py < 0 || px >= W || py >= H) return;
+  const id = regionAt(px, py);
+  if (id !== hoverId) { hoverId = id; updateStatus(id); repaint(); }
+});
+cv.addEventListener('mouseleave', () => { hoverId = -1; updateStatus(-1); repaint(); });
+window.addEventListener('mouseup', () => { painting = false; });
+
+document.addEventListener('keydown', e => {
+  const i = parseInt(e.key) - 1;
+  const names = Object.keys(PALETTE);
+  if (i >= 0 && i < names.length) setCurrent(names[i]);
+});
+
+document.getElementById('exportJson').onclick = () => {
+  const a = document.createElement('a');
+  a.href = 'data:application/json,' + encodeURIComponent(JSON.stringify(mapping, null, 1));
+  a.download = 'mapping.json'; a.click();
+};
+document.getElementById('importJson').onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  f.text().then(t => { mapping = JSON.parse(t); repaint(); });
+};
+document.getElementById('exportPng').onclick = () => {
+  const a = document.createElement('a');
+  a.href = cv.toDataURL('image/png');
+  a.download = 'colored.png'; a.click();
+};
+
+let loaded = 0;
+function ready() {
+  if (++loaded < 2) return;
+  const off = document.createElement('canvas');
+  off.width = W; off.height = H;
+  const octx = off.getContext('2d', { willReadFrequently: true });
+  octx.drawImage(labelsImg, 0, 0);
+  labelData = octx.getImageData(0, 0, W, H).data;
+  fillImageData = ctx.createImageData(W, H);
+  buildSwatches();
+  repaint();
+}
+lineart.onload = ready; labelsImg.onload = ready;
+lineart.src = 'data:image/png;base64,{{LINEART}}';
+labelsImg.src = 'data:image/png;base64,{{LABELS}}';
+</script>
+</body>
+</html>
