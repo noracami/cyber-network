@@ -58,13 +58,16 @@ defmodule GridMaster.StoreTest do
     end
   end
 
-  # 等到輪到真人（NPC 不會再出手）再取狀態，狀態比較才不會被 tick 打擾
+  # 等到輪到真人、且沒有 NPC 還要出手再取狀態，狀態比較才不會被 tick 打擾。
+  # 只看「輪到真人」不夠：bureaucracy 是同時提交，輪到真人時 NPC 可能也還沒交，
+  # 它的 tick 隨時會再寫一筆動作日誌，拿這時的狀態去比對重播就會差一手
   defp settle_on_human(room, human, tries \\ 400) do
     s = :sys.get_state(room)
 
     cond do
       s.engine != nil and s.engine.phase != :finished and
-          Npc.pending(s.engine, [human]) == human ->
+        Npc.pending(s.engine, [human]) == human and
+          Npc.pending(s.engine, npc_ids(s.engine)) == nil ->
         s
 
       tries == 0 ->
@@ -75,6 +78,8 @@ defmodule GridMaster.StoreTest do
         settle_on_human(room, human, tries - 1)
     end
   end
+
+  defp npc_ids(engine), do: engine.players |> Map.keys() |> Enum.filter(&Npc.npc?/1)
 
   defp wait_until(fun, tries \\ 200) do
     cond do

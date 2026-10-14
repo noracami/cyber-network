@@ -6,6 +6,8 @@ defmodule GridMaster.Engine.Resources do
   alias GridMaster.Engine.{Capacity, Flow, Ladder}
 
   @resources ~w(hydro thermal waste quantum)
+  # compile 時就建好：atom 跟著模組載入，不必靠別的模組先載入才存在（String.to_existing_atom 會看載入順序）
+  @resource_atoms Map.new(@resources, &{&1, String.to_atom(&1)})
 
   def new(turn_order), do: %__MODULE__{queue: Enum.reverse(turn_order)}
 
@@ -62,7 +64,7 @@ defmodule GridMaster.Engine.Resources do
 
   defp normalize(payload) do
     quantities =
-      Map.new(@resources, fn r -> {r, Map.get(payload, String.to_existing_atom(r), 0)} end)
+      Map.new(@resources, fn r -> {r, Map.get(payload, @resource_atoms[r], 0)} end)
 
     if Enum.all?(quantities, fn {_r, qty} -> is_integer(qty) and qty >= 0 end),
       do: quantities,
