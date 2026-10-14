@@ -94,7 +94,7 @@ defmodule GridMaster.Engine.RandomDriveTest do
 
     buys =
       for r <- @resources do
-        {head, {:resources_buy, Map.new([{String.to_existing_atom(r), 1}])}}
+        {head, {:resources_buy, Map.new([{String.to_atom(r), 1}])}}
       end
 
     buys ++ [{head, {:resources_buy, %{}}}]
