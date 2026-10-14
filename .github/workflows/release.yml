@@ -1,0 +1,69 @@
+name: Release
+
+# merge 一個修改了 backend/mix.exs 版號的 PR（release PR）就是發版：
+# 版號 X.Y.Z 還沒有 vX.Y.Z tag 時，跑測試、build image 並部署到 Dokploy，
+# 成功後打上 tag 當作「已上線」的紀錄。版號沒變的 push 會被跳過。
+# 一般 PR merge 進 main 不會部署。發版流程見 CLAUDE.md。
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - backend/mix.exs
+  workflow_dispatch: # 部署失敗修好後，可以手動重跑
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      release: ${{ steps.version.outputs.release }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - id: version
+        run: |
+          VERSION=$(sed -nE 's/^ *version: "([^"]+)",?$/\1/p' backend/mix.exs | head -1)
+          [ -n "$VERSION" ] || { echo "::error::version not found in backend/mix.exs"; exit 1; }
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null; then
+            echo "v$VERSION already released; nothing to do"
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  test:
+    needs: check
+    if: needs.check.outputs.release == 'true'
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: [check, test]
+    runs-on: ubuntu-latest
+    # production environment：要審核者核准才會執行；DOKPLOY_WEBHOOK 是這個
+    # environment 的 secret，只有核准後的這個 job 拿得到。
+    environment:
+      name: production
+      url: https://gridmaster.miao-bao.cc/api/activity
+    permissions:
+      contents: write # 打 tag
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: lathyrus-odoratus/dokploy-deploy@v1
+        with:
+          version: ${{ needs.check.outputs.version }}
+          webhook: ${{ secrets.DOKPLOY_WEBHOOK }}
+
+      - name: Tag the release
+        env:
+          TAG: v${{ needs.check.outputs.version }}
+        run: |
+          git tag "$TAG" "$GITHUB_SHA"
+          git push origin "$TAG"
