@@ -1,0 +1,45 @@
+name: CI
+
+# PR 與 main 上跑後端測試。部署不在這裡，見 release.yml。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call: # release.yml 先跑測試再部署
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      PGHOST: localhost
+    steps:
+      - uses: actions/checkout@v7
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: "1.18.4"
+          otp-version: "28"
+      - uses: actions/cache@v6
+        with:
+          path: |
+            backend/deps
+            backend/_build
+          key: mix-${{ runner.os }}-${{ hashFiles('backend/mix.lock') }}
+      - run: mix deps.get
+      - run: mix compile --warnings-as-errors
+      - run: mix test
