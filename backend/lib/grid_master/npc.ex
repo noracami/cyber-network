@@ -14,6 +14,8 @@ defmodule GridMaster.Npc do
 
   @names ~w(伏特 安培 歐姆 瓦特 焦耳 法拉)
   @resource_types ~w(hydro thermal waste quantum)
+  # compile 時就建好：atom 跟著模組載入，不必靠別的模組先載入才存在（String.to_existing_atom 會看載入順序）
+  @resource_atoms Map.new(@resource_types, &{&1, String.to_atom(&1)})
   @build_reserve 15
 
   def id(n), do: "npc_#{n}"
@@ -159,7 +161,7 @@ defmodule GridMaster.Npc do
 
     Map.new(needs, fn {type, need} ->
       lack = max(0, need - (me.resources[type] || 0))
-      {String.to_existing_atom(type), min(lack, state.resource_market[type] || 0)}
+      {Map.fetch!(@resource_atoms, type), min(lack, state.resource_market[type] || 0)}
     end)
   end
 
